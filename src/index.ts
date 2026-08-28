@@ -42,6 +42,10 @@ export type {
     YmGlobal,
 } from './core/types/tag.js'
 
+export { metricaCsp, metricaCspString } from './core/csp.js'
+
+export type { CspOptions, CspRegions } from './core/csp.js'
+
 export {
     noscriptPixelUrl,
     TAG_JS_URL,
