@@ -13,7 +13,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v5
-            - uses: oven-sh/setup-bun@v2
+            # The only third-party action in this workflow, so the only floating tag that
+            # is ours to vouch for; GitHub's own actions ship immutable tags.
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
               with:
                   bun-version: latest
             # 22.22.2 is the floor imposed by the toolchain: jsdom@30 wants ^22.22.2,

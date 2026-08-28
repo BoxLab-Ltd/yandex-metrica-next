@@ -15,11 +15,12 @@ jobs:
             contents: read
             id-token: write
         steps:
-            # Actions are pinned by SHA only in this workflow: it is the single place that
-            # can publish under the package name. A hijacked floating tag here would ship
-            # arbitrary code with valid provenance.
+            # Every action is pinned by SHA here, GitHub's own included: this is the single
+            # place that can publish under the package name, and a hijacked floating tag
+            # would ship arbitrary code carrying valid provenance. Other workflows pin only
+            # third-party actions.
             - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-            - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
               with:
                   bun-version: latest
             - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
