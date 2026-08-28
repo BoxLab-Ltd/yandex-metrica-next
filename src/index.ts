@@ -47,3 +47,10 @@ export type {
     MetricaEvent,
     MetricaEventType,
 } from './core/types/events.js'
+
+export type {
+    NavigationType,
+    PageviewContext,
+    PageviewOptions,
+    PageviewTrigger,
+} from './core/pageview.js'
