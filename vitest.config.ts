@@ -14,13 +14,29 @@ export default defineConfig({
     test: {
         projects: [
             {
+                extends: true,
+                test: {
+                    name: 'app',
+                    environment: 'jsdom',
+                    include: ['src/{core,react,client}/**/*.test.{ts,tsx}'],
+                    exclude: [
+                        'src/core/*.dual.test.ts',
+                        'src/core/*.node.test.ts',
+                    ],
+                    setupFiles: ['./test/setup.ts'],
+                },
+            },
+            {
                 // `extends: true` is the default only from Vitest 5; being explicit now
                 // keeps the config identical across the upgrade.
                 extends: true,
                 test: {
                     name: 'node',
                     environment: 'node',
-                    include: ['src/{client,testing,types}/**/*.test.ts'],
+                    include: [
+                        'src/{client,testing,types}/**/*.test.ts',
+                        'src/core/*.dual.test.ts',
+                    ],
                 },
             },
         ],
