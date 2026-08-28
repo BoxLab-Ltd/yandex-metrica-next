@@ -36,6 +36,7 @@ export default defineConfig({
                     include: [
                         'src/{client,testing,types}/**/*.test.ts',
                         'src/core/*.dual.test.ts',
+                        'src/core/*.node.test.ts',
                     ],
                 },
             },
