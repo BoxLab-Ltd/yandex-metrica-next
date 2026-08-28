@@ -45,8 +45,10 @@ export function YandexMetrica({
         return () => void handle.dispose()
     }, [serialized])
 
-    const pixelFor = devCounterId ?? counterId
-    if (!noscript || pixelFor === undefined) return <></>
+    // register() refuses a non-integer counterId; the pixel has to hold the same line,
+    // because here the value is interpolated into HTML instead of handed to the tag.
+    const pixelFor = Number(devCounterId ?? counterId)
+    if (!noscript || !Number.isInteger(pixelFor) || pixelFor <= 0) return <></>
 
     // React only renders <noscript> children during SSR; on the client the element comes
     // out empty. The markup has to be injected as a string, exactly as the vendor snippet

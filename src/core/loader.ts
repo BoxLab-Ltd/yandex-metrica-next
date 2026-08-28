@@ -20,11 +20,13 @@ export interface TagLoadResult {
     alreadyPresent: boolean
 }
 
+// Numeric coercion, not String(): callers embed this URL in the noscript markup, and a
+// counterId arriving from untyped JavaScript must not be able to carry HTML into it.
 export const noscriptPixelUrl = (
     counterId: CounterId,
     options: { domain?: MetricaDomain } = {},
 ): string =>
-    `https://mc.yandex.${options.domain === 'com' ? 'com' : 'ru'}/watch/${String(counterId)}`
+    `https://mc.yandex.${options.domain === 'com' ? 'com' : 'ru'}/watch/${String(Number(counterId))}`
 
 export const resolveTagUrl = (options: LoadTagOptions = {}): string =>
     options.scriptSrc ??
