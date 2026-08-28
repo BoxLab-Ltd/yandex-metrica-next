@@ -5,6 +5,9 @@
     "license": "MIT",
     "author": "BoxLab Ltd",
     "type": "module",
+    "sideEffects": [
+        "./dist/client/**"
+    ],
     "files": [
         "dist",
         "AGENTS.md"
@@ -50,6 +53,16 @@
                 "default": "./dist/index.cjs"
             }
         },
+        "./client": {
+            "import": {
+                "types": "./dist/client/index.d.ts",
+                "default": "./dist/client/index.js"
+            },
+            "require": {
+                "types": "./dist/client/index.d.cts",
+                "default": "./dist/client/index.cjs"
+            }
+        },
         "./testing": {
             "import": {
                 "types": "./dist/testing/index.d.ts",
@@ -69,6 +82,9 @@
         "*": {
             "*": [
                 "./dist/index.d.cts"
+            ],
+            "client": [
+                "./dist/client/index.d.cts"
             ],
             "testing": [
                 "./dist/testing/index.d.cts"
