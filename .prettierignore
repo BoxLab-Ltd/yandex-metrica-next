@@ -1,0 +1,9 @@
+dist
+coverage
+node_modules
+.next
+research
+test-results
+playwright-report
+bun.lock
+docs/plan.html

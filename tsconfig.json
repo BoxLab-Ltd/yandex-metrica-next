@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "types": [],
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "verbatimModuleSyntax": true,
+        "isolatedModules": true,
+        "isolatedDeclarations": true,
+        "declaration": true,
+        "declarationMap": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": true
+    },
+    "include": ["src"],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "research",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+    ]
+}
