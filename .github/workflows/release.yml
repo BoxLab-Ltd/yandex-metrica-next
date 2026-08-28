@@ -2,7 +2,7 @@ name: Release
 
 on:
     release:
-        types: [created]
+        types: [published]
 
 permissions:
     contents: read
@@ -49,5 +49,19 @@ jobs:
                   bun pm pack
                   bunx attw ./*.tgz
 
-            # Trusted Publishing (OIDC) generates provenance on its own; no token, no --provenance.
-            - run: npm publish --dry-run
+            # Node 22 bundles npm 10.x, which cannot authenticate by OIDC at all.
+            # Trusted Publishing needs >= 11.5.1; pinned rather than @latest because this
+            # is the one workflow holding id-token: write.
+            - run: npm install -g npm@11.18.0
+            # Trusted Publishing (OIDC) generates provenance on its own; no token, no
+            # --provenance. The version check keeps a re-run safe: the registry refuses to
+            # overwrite a version, so a release that failed after this step could never be
+            # retried otherwise.
+            - name: Publish to npm (skip when the version is already there)
+              run: |
+                  VERSION="$(node -p "require('./package.json').version")"
+                  if npm view "@boxlab/yandex-metrica-next@${VERSION}" version >/dev/null 2>&1; then
+                    echo "@boxlab/yandex-metrica-next@${VERSION} is already published — skipping"
+                  else
+                    npm publish --ignore-scripts
+                  fi
