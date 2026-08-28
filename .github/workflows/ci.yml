@@ -1,0 +1,38 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            # 22.22.2 is the floor imposed by the toolchain: jsdom@30 wants ^22.22.2,
+            # tsdown and size-limit ^22.18.0. The package itself still supports Node 20.9.
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22.22.2
+            - run: bun install --frozen-lockfile
+            - run: bun run typecheck
+            - run: bun run lint
+            - run: bun run format:check
+            - run: bun run build
+            - run: bun run lint:pkg
+            - name: attw
+              run: |
+                  bun pm pack
+                  bunx attw ./*.tgz
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: tarball
+                  path: ./*.tgz
+                  if-no-files-found: error

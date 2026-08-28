@@ -89,6 +89,7 @@
         "format:check": "prettier --check .",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
+        "lint:pkg": "publint --strict",
         "typecheck": "tsc --noEmit"
     },
     "devDependencies": {
