@@ -13,3 +13,37 @@ export type CounterId = number
 // declared in the file the specifier resolves to, or augmentation never reaches subpaths.
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface MetricaGoalRegistry {}
+
+export type {
+    GoalArgs,
+    GoalCallOptions,
+    GoalName,
+    ValidGoalId,
+} from './types/goals.js'
+
+export type {
+    CurrencyCode,
+    MetricaValue,
+    NoReservedKeys,
+    ReservedVisitParamKey,
+    UserParameters,
+    VisitParameters,
+} from './core/types/params.js'
+
+export type {
+    ExtLinkOptions,
+    FileOptions,
+    HitOptions,
+    InitParameters,
+    ManagedInitParameters,
+    NotBounceOptions,
+    ReachGoalOptions,
+    YmFunction,
+    YmGlobal,
+} from './core/types/tag.js'
+
+export type {
+    BeforeSend,
+    MetricaEvent,
+    MetricaEventType,
+} from './core/types/events.js'

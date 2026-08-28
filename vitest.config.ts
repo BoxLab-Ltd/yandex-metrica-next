@@ -16,6 +16,18 @@ export default defineConfig({
             {
                 extends: true,
                 test: {
+                    name: 'types',
+                    typecheck: {
+                        enabled: true,
+                        only: true,
+                        include: ['src/**/*.test-d.ts'],
+                        tsconfig: './tsconfig.test.json',
+                    },
+                },
+            },
+            {
+                extends: true,
+                test: {
                     name: 'app',
                     environment: 'jsdom',
                     include: ['src/{core,react,client}/**/*.test.{ts,tsx}'],
