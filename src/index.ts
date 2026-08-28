@@ -42,6 +42,17 @@ export type {
     YmGlobal,
 } from './core/types/tag.js'
 
+export {
+    noscriptPixelUrl,
+    TAG_JS_URL,
+    TAG_JS_URL_COM,
+    TAG_JS_URL_JSDELIVR,
+} from './core/loader.js'
+
+export type { MetricaDomain } from './core/loader.js'
+
+export type { BlockReason, ConsentState, CounterStatus } from './core/init.js'
+
 export type {
     BeforeSend,
     MetricaEvent,
