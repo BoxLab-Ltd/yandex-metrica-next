@@ -135,6 +135,7 @@
         "postbuild": "node scripts/assert-use-client.mjs && node scripts/assert-prod-strip.mjs",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
+        "test:types": "node scripts/type-fixture.mjs",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
     },

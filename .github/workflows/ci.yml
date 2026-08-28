@@ -31,6 +31,7 @@ jobs:
               run: |
                   bun pm pack
                   bunx attw ./*.tgz
+            - run: bun run test:types
             - uses: actions/upload-artifact@v4
               with:
                   name: tarball

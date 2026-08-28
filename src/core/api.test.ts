@@ -43,6 +43,7 @@ beforeEach(() => {
         grant: vi.fn(),
         revoke: vi.fn(),
         destruct: vi.fn(),
+        arm: vi.fn(),
         clientId: () => Promise.resolve('client-1'),
         ready: () => Promise.resolve(true),
     }

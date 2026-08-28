@@ -42,6 +42,7 @@ jobs:
             - run: bun run lint
             - run: bun run build
             - run: bun run lint:pkg
+            - run: bun run test:types
             - name: attw
               run: |
                   bun pm pack

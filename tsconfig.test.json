@@ -12,5 +12,6 @@
         "test",
         "vitest.config.ts",
         "scripts"
-    ]
+    ],
+    "exclude": ["node_modules", "dist", "research", "test/types"]
 }
