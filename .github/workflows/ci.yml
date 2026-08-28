@@ -40,3 +40,21 @@ jobs:
                   name: tarball
                   path: ./*.tgz
                   if-no-files-found: error
+
+    # React 18 is swapped in by installing it, not by aliasing the resolver: CJS packages
+    # are externalised and their internal require('react') walks past any bundler alias,
+    # which produces a mixed-version tree that fails in ways unrelated to the code.
+    react18:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+              with:
+                  bun-version: latest
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22.22.2
+            - run: bun install --frozen-lockfile
+            # The dual-build test reads dist, so the artifacts have to exist first.
+            - run: bun run build
+            - run: bun run test:react18

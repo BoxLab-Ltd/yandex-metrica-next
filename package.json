@@ -148,9 +148,11 @@
         "postbuild": "node scripts/assert-use-client.mjs && node scripts/assert-prod-strip.mjs",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
+        "test:react18": "bun run with-react18 && vitest run",
         "test:types": "node scripts/type-fixture.mjs",
         "test:watch": "vitest",
-        "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+        "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+        "with-react18": "bun add -d --no-save react@18.3.1 react-dom@18.3.1 @types/react@18.3.31 @types/react-dom@18.3.7"
     },
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",
@@ -160,7 +162,9 @@
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.20.1",
         "@types/react": "^19.2.18",
+        "@types/react-18": "npm:@types/react@^18.3.31",
         "@types/react-dom": "^19.2.4",
+        "@types/react-dom-18": "npm:@types/react-dom@^18.3.7",
         "@vitest/coverage-v8": "^4.1.11",
         "eslint": "^10.8.1",
         "eslint-config-prettier": "^10.1.8",
