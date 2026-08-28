@@ -53,6 +53,14 @@ export type { MetricaDomain } from './core/loader.js'
 
 export type { BlockReason, ConsentState, CounterStatus } from './core/init.js'
 
+export type { MetricaMode } from './core/mode.js'
+
+export type {
+    Diagnostic,
+    DiagnosticCode,
+    DiagnosticLevel,
+} from './core/diagnostics.js'
+
 export type {
     BeforeSend,
     MetricaEvent,
