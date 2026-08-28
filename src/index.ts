@@ -42,6 +42,28 @@ export type {
     YmGlobal,
 } from './core/types/tag.js'
 
+export {
+    addFileExtension,
+    destruct,
+    extLink,
+    file,
+    getClientId,
+    getStatus,
+    grantConsent,
+    hit,
+    isReady,
+    notBounce,
+    params,
+    reachGoal,
+    reachGoalUnsafe,
+    revokeConsent,
+    setUserID,
+    userParams,
+    whenReady,
+} from './core/api.js'
+
+export type { MetricaRuntime, MetricaStatus } from './core/api.js'
+
 export { metricaCsp, metricaCspString } from './core/csp.js'
 
 export type { CspOptions, CspRegions } from './core/csp.js'
