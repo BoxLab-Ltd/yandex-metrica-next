@@ -18,5 +18,8 @@ jobs:
             - uses: actions/checkout@v5
             - uses: github/codeql-action/init@v3
               with:
-                  languages: javascript-typescript
+                  # `actions` covers the workflow files themselves — that is the analysis
+                  # that caught an unpinned third-party action here, and dropping it would
+                  # leave the release path unscanned.
+                  languages: javascript-typescript, actions
             - uses: github/codeql-action/analyze@v3
