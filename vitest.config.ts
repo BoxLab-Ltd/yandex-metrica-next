@@ -26,6 +26,8 @@ export default defineConfig({
                 },
             },
             {
+                // `extends: true` is the default only from Vitest 5; being explicit now
+                // keeps the config identical across the upgrade.
                 extends: true,
                 test: {
                     name: 'app',
@@ -39,8 +41,15 @@ export default defineConfig({
                 },
             },
             {
-                // `extends: true` is the default only from Vitest 5; being explicit now
-                // keeps the config identical across the upgrade.
+                extends: true,
+                test: {
+                    name: 'pages',
+                    environment: 'jsdom',
+                    include: ['src/pages/**/*.test.{ts,tsx}'],
+                    setupFiles: ['./test/setup.ts'],
+                },
+            },
+            {
                 extends: true,
                 test: {
                     name: 'node',

@@ -63,6 +63,16 @@
                 "default": "./dist/react/index.cjs"
             }
         },
+        "./pages": {
+            "import": {
+                "types": "./dist/pages/index.d.ts",
+                "default": "./dist/pages/index.js"
+            },
+            "require": {
+                "types": "./dist/pages/index.d.cts",
+                "default": "./dist/pages/index.cjs"
+            }
+        },
         "./client": {
             "import": {
                 "types": "./dist/client/index.d.ts",
@@ -95,6 +105,9 @@
             ],
             "react": [
                 "./dist/react/index.d.cts"
+            ],
+            "pages": [
+                "./dist/pages/index.d.cts"
             ],
             "client": [
                 "./dist/client/index.d.cts"
