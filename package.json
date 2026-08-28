@@ -53,6 +53,16 @@
                 "default": "./dist/index.cjs"
             }
         },
+        "./react": {
+            "import": {
+                "types": "./dist/react/index.d.ts",
+                "default": "./dist/react/index.js"
+            },
+            "require": {
+                "types": "./dist/react/index.d.cts",
+                "default": "./dist/react/index.cjs"
+            }
+        },
         "./client": {
             "import": {
                 "types": "./dist/client/index.d.ts",
@@ -82,6 +92,9 @@
         "*": {
             "*": [
                 "./dist/index.d.cts"
+            ],
+            "react": [
+                "./dist/react/index.d.cts"
             ],
             "client": [
                 "./dist/client/index.d.cts"
@@ -119,7 +132,7 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "lint:pkg": "publint --strict",
-        "postbuild": "node scripts/assert-prod-strip.mjs",
+        "postbuild": "node scripts/assert-use-client.mjs && node scripts/assert-prod-strip.mjs",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
         "test:watch": "vitest",
