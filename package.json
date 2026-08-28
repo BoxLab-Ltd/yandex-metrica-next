@@ -50,6 +50,16 @@
                 "default": "./dist/index.cjs"
             }
         },
+        "./testing": {
+            "import": {
+                "types": "./dist/testing/index.d.ts",
+                "default": "./dist/testing/index.js"
+            },
+            "require": {
+                "types": "./dist/testing/index.d.cts",
+                "default": "./dist/testing/index.cjs"
+            }
+        },
         "./package.json": "./package.json"
     },
     "main": "./dist/index.cjs",
@@ -59,6 +69,9 @@
         "*": {
             "*": [
                 "./dist/index.d.cts"
+            ],
+            "testing": [
+                "./dist/testing/index.d.cts"
             ]
         }
     },
@@ -90,7 +103,10 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "lint:pkg": "publint --strict",
-        "typecheck": "tsc --noEmit"
+        "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
     },
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",

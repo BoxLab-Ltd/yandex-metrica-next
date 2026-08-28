@@ -6,7 +6,7 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf8')) as {
 }
 
 export default defineConfig({
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/testing/index.ts'],
     // test files live next to sources; they must never reach the tarball
     format: ['esm', 'cjs'],
     platform: 'neutral',

@@ -1,0 +1,16 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "types": ["node"],
+        "isolatedDeclarations": false,
+        "noUnusedLocals": false
+    },
+    "include": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/**/*.test-d.ts",
+        "test",
+        "vitest.config.ts",
+        "scripts"
+    ]
+}
