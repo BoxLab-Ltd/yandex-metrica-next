@@ -33,10 +33,14 @@ export interface PageviewOptions extends NormalizeOptions {
 export interface PageviewTracker {
     start(): void
     stop(): void
-    /** Enriches the next commit with navigationType and transitionId. */
+    /**
+     * Enriches the next commit with navigationType and transitionId. `unknown` is a
+     * legitimate argument: an adapter may know a navigation completed without being able
+     * to name its kind, and arming is also what stops YM304 firing.
+     */
     arm(
         url: string,
-        navigationType: Exclude<NavigationType, 'unknown'>,
+        navigationType: NavigationType,
         transitionId?: string | null,
     ): void
     /** Commits without waiting for a history write; used for the first pageview. */
@@ -63,7 +67,7 @@ const ARM_WINDOW_MS = 1000
 
 type Armed = {
     url: string
-    navigationType: Exclude<NavigationType, 'unknown'>
+    navigationType: NavigationType
     transitionId: string | null
     at: number
 }
@@ -218,7 +222,17 @@ export function createPageviewTracker(
             pendingUrl = null
         },
         arm(url, navigationType, transitionId = null) {
-            armLog.push({ url, navigationType, transitionId, at: now() })
+            // Armed urls arrive raw — onRouterTransitionStart reports push and replace
+            // relative — while commits are normalised, so an unnormalised entry either
+            // throws in the URL parser or never matches the commit it belongs to.
+            const normalized = normalizeUrl(url, options)
+            if (normalized.url === null) return
+            armLog.push({
+                url: normalized.url,
+                navigationType,
+                transitionId,
+                at: now(),
+            })
             if (armLog.length > 20) armLog.shift()
         },
         trackNow(url, navigationType = 'unknown') {

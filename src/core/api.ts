@@ -18,6 +18,7 @@ import type {
     NotBounceOptions,
 } from './types/tag.js'
 import type { BlockReason, CounterStatus } from './init.js'
+import type { NavigationType } from './pageview.js'
 
 export interface MetricaStatus {
     readonly state: CounterStatus | 'disabled'
@@ -37,7 +38,7 @@ export interface MetricaRuntime {
     /** Enriches the next commit with navigationType and transitionId. */
     arm(
         url: string,
-        navigationType: 'push' | 'replace' | 'traverse',
+        navigationType: NavigationType,
         transitionId?: string | null,
     ): void
     /** Resolves with the tag's client id, or null on timeout. Never rejects. */
@@ -247,7 +248,7 @@ export function getStatus(): MetricaStatus {
 
 export function armNavigation(
     url: string,
-    navigationType: 'push' | 'replace' | 'traverse',
+    navigationType: NavigationType,
     transitionId?: string | null,
 ): void {
     runtime?.arm(url, navigationType, transitionId)

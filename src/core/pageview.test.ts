@@ -167,6 +167,19 @@ describe('pageview tracker — arm enrichment', () => {
         expect(sent[1]?.context.transitionId).toBe('mt-1')
     })
 
+    it('matches an arm that arrived as a relative url', () => {
+        const tracker = build()
+        tracker.trackNow(`${ORIGIN}/a`)
+
+        // What the hook actually passes for push and replace.
+        tracker.arm('/b', 'push', 'mt-2')
+        navigate('/b')
+        settle()
+
+        expect(sent[1]?.context.navigationType).toBe('push')
+        expect(sent[1]?.context.transitionId).toBe('mt-2')
+    })
+
     it('counts commits without arm so a missing hook re-export can be reported', () => {
         const tracker = build()
         tracker.trackNow(`${ORIGIN}/a`)
