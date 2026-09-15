@@ -11,6 +11,7 @@ import {
     TAG_JS_URL,
     TAG_JS_URL_COM,
 } from './loader.js'
+import { resetMetricaRegistry } from '../testing/index.js'
 
 const COUNTER = 12345678
 
@@ -43,6 +44,7 @@ const fireReady = () => {
 
 beforeEach(() => {
     vi.useFakeTimers()
+    resetMetricaRegistry()
     document.head.querySelectorAll('script').forEach(s => s.remove())
     delete (globalThis as { ym?: unknown }).ym
     delete (globalThis as { _ym_debug?: unknown })._ym_debug

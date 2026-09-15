@@ -259,10 +259,12 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
                 `disableYaCounter${String(counterId)}`
             ] = true
             sendToTag({ counterId, method: 'destruct', args: [] })
+            registry.tags.delete(counterId)
             counterStatus = 'destroyed'
         },
         destruct: () => {
             sendToTag({ counterId, method: 'destruct', args: [] })
+            registry.tags.delete(counterId)
             counterStatus = 'destroyed'
         },
         arm: (url, navigationType, transitionId) => {
@@ -314,10 +316,15 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
 
     setRuntime(runtime)
 
+    let disposed = false
+
     return {
         counterId,
         status: currentStatus,
         dispose() {
+            // A repeated dispose would put back a history method a newer registration has patched.
+            if (disposed) return
+            disposed = true
             tracker?.stop()
             signals.dispose()
             titles.dispose()

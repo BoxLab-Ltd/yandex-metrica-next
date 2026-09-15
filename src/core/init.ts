@@ -2,6 +2,7 @@ import type { CounterId } from '../index.js'
 import type { InitParameters, ManagedInitParameters } from './types/tag.js'
 import type { LoadTagOptions } from './loader.js'
 import { loadTag } from './loader.js'
+import { getRegistry } from './registry.js'
 import { installStub } from './stub.js'
 
 export type ConsentState = 'granted' | 'denied'
@@ -126,22 +127,36 @@ export function initCounter(
         setStatus('loading')
         installStub()
 
+        const readyEvent = `yacounter${String(options.counterId)}inited`
+        const tags = getRegistry().tags
+        const tag = tags.get(options.counterId)
+
+        // tag.js never re-announces a counter, so a remount would buffer every call forever.
+        if (tag === 'ready') {
+            setStatus('ready')
+            deps.onReady?.(options.counterId)
+            return
+        }
+
         readyListener = () => {
             clearTimer()
             detachReady()
             setStatus('ready')
             deps.onReady?.(options.counterId)
         }
-        document.addEventListener(
-            `yacounter${String(options.counterId)}inited`,
-            readyListener,
-            {
-                once: true,
-            },
-        )
+        document.addEventListener(readyEvent, readyListener, { once: true })
 
-        loadTag(options)
-        deps.call(options.counterId, 'init', buildInitParameters(options))
+        if (tag === undefined) {
+            tags.set(options.counterId, 'loading')
+            // Outlives this handle: readiness can arrive while nothing is registered.
+            document.addEventListener(
+                readyEvent,
+                () => void tags.set(options.counterId, 'ready'),
+                { once: true },
+            )
+            loadTag(options)
+            deps.call(options.counterId, 'init', buildInitParameters(options))
+        }
 
         timeoutHandle = schedule(() => {
             if (status === 'loading') {

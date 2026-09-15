@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { register } from './register.js'
 import { getRegistry } from './registry.js'
-import { getStatus, isReady, setRuntime } from './api.js'
+import { getStatus, isReady, reachGoalUnsafe, setRuntime } from './api.js'
 import {
     installYmMock,
     resetMetricaRegistry,
@@ -161,12 +161,41 @@ describe('register — dispose', () => {
         expect(mock.forMethod('destruct')).toHaveLength(0)
     })
 
-    it('allows a fresh register after dispose', async () => {
+    it('allows a fresh register after dispose without a second init', async () => {
         start().dispose()
         start()
         fireReady()
         await vi.advanceTimersByTimeAsync(500)
 
-        expect(mock.forMethod('init').length).toBeGreaterThanOrEqual(1)
+        expect(mock.forMethod('init')).toHaveLength(1)
+        expect(mock.forMethod('hit')).toHaveLength(1)
+    })
+
+    // tag.js announces a counter once per document; a later registration waited forever.
+    it('delivers calls after a remount once the tag is ready', async () => {
+        const first = start({ pageviews: false })
+        fireReady()
+        await vi.advanceTimersByTimeAsync(500)
+        first.dispose()
+
+        start({ pageviews: false })
+        reachGoalUnsafe('after-remount')
+        await vi.advanceTimersByTimeAsync(500)
+
+        expect(mock.forMethod('init')).toHaveLength(1)
+        expect(mock.forMethod('reachGoal')).toHaveLength(1)
+        expect(getStatus().state).toBe('ready')
+    })
+
+    it('is ready when the tag finished loading while nothing was registered', async () => {
+        start({ pageviews: false }).dispose()
+        fireReady()
+
+        start({ pageviews: false })
+        reachGoalUnsafe('after-gap')
+        await vi.advanceTimersByTimeAsync(500)
+
+        expect(mock.forMethod('init')).toHaveLength(1)
+        expect(mock.forMethod('reachGoal')).toHaveLength(1)
     })
 })

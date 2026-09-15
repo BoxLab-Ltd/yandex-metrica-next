@@ -33,6 +33,8 @@ export interface Registry {
     seenDiagnostics: Set<string>
     /** The registered runtime. Shared, so a CJS copy of the package reaches the same counter. */
     runtime: MetricaRuntime | null
+    /** Tag state per counter; outlives registrations, since tag.js announces a counter only once. */
+    tags: Map<CounterId, 'loading' | 'ready'>
 }
 
 const createRegistry = (): Registry => ({
@@ -44,6 +46,7 @@ const createRegistry = (): Registry => ({
     lastCommittedAt: 0,
     seenDiagnostics: new Set(),
     runtime: null,
+    tags: new Map(),
 })
 
 type Host = Record<symbol, Registry | undefined>
