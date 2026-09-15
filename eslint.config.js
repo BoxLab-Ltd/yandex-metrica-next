@@ -35,6 +35,12 @@ export default tseslint.config(
         languageOptions: { globals: globals.node },
     },
     {
+        // CommonJS on purpose: a stand-in for a CJS dependency and a CJS next.config.
+        files: ['examples/**/*.{cjs,js}'],
+        languageOptions: { sourceType: 'commonjs', globals: globals.node },
+        rules: { '@typescript-eslint/no-require-imports': 'off' },
+    },
+    {
         rules: {
             '@typescript-eslint/no-unused-vars': [
                 'error',
