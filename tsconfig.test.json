@@ -11,7 +11,9 @@
         "src/**/*.test-d.ts",
         "test",
         "vitest.config.ts",
-        "scripts"
+        "scripts",
+        "e2e",
+        "playwright.config.ts"
     ],
     "exclude": ["node_modules", "dist", "research", "test/types"]
 }
