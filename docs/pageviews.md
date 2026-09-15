@@ -143,20 +143,20 @@ on onRouterTransitionStart(url, navigationType, event):
 
 ## 3. Поведенческая таблица
 
-| Событие                          | Решение                                                  | Опция (дефолт)               |
-| -------------------------------- | -------------------------------------------------------- | ---------------------------- |
-| Первый просмотр после загрузки   | всегда, из `register()`; `referer` = `document.referrer` | `pageviews.first` (`true`)   |
-| push / replace / traverse        | просмотр по COMMIT                                       | `navigationTypes`            |
-| Смена только query               | не просмотр                                              | `trigger` (`'pathname'`)     |
-| Смена только hash                | не просмотр                                              | `trackHashChanges` (`false`) |
-| `router.refresh()`               | не просмотр — URL не изменился                           | —                            |
-| Инициализация роутера            | не просмотр — URL не изменился                           | —                            |
-| Userland `history.pushState`     | просмотр (URL изменился, ARM нет)                        | `trackHistoryApi` (`true`)   |
-| `redirect()` из Server Component | просмотр только конечного URL                            | `commitDebounce` (`100`)     |
-| Отменённый транзишен             | просмотр только последнего URL                           | `commitDebounce`             |
-| Intercepting / parallel route    | просмотр — URL реально сменился                          | `shouldTrack`                |
-| bfcache (`pageshow.persisted`)   | не слать                                                 | `bfcache` (`'ignore'`)       |
-| Тег ещё не загрузился            | вызов в буфер, флаш при готовности                       | —                            |
+| Событие                          | Решение                                                                                                                   | Опция (дефолт)               |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Первый просмотр после загрузки   | всегда, из `register()`; `referer` = `document.referrer`                                                                  | `pageviews.first` (`true`)   |
+| push / replace / traverse        | просмотр по COMMIT                                                                                                        | `navigationTypes`            |
+| Смена только query               | не просмотр                                                                                                               | `trigger` (`'pathname'`)     |
+| Смена только hash                | не просмотр                                                                                                               | `trackHashChanges` (`false`) |
+| `router.refresh()`               | не просмотр — URL не изменился                                                                                            | —                            |
+| Инициализация роутера            | не просмотр — URL не изменился                                                                                            | —                            |
+| Userland `history.pushState`     | просмотр (URL изменился, ARM нет)                                                                                         | `trackHistoryApi` (`true`)   |
+| `redirect()` из Server Component | просмотр только конечного URL                                                                                             | `commitDebounce` (`100`)     |
+| Отменённый транзишен             | просмотр только последнего URL                                                                                            | `commitDebounce`             |
+| Intercepting / parallel route    | просмотр — URL реально сменился; `title` — тот, что в документе (Next не применяет метаданные слота при мягкой навигации) | `shouldTrack`                |
+| bfcache (`pageshow.persisted`)   | не слать                                                                                                                  | `bfcache` (`'ignore'`)       |
+| Тег ещё не загрузился            | вызов в буфер, флаш при готовности                                                                                        | —                            |
 
 Числовые дефолты: `commitDebounce` 100, `dedupeWindow` 500, `commitTimeout` 10 000, `titleTimeout` 400,
 `searchDebounce` 500, `initTimeout` 5 000, буфер вызовов 100, `maxPerMinute` 60, усечение URL 2048.
