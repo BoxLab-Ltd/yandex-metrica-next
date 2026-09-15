@@ -22,4 +22,18 @@ describe('dual build', () => {
         const out = execFileSync('node', ['-e', script], { encoding: 'utf8' })
         expect(out.trim()).toBe('shared')
     })
+
+    // A shared registry object proved nothing while the runtime still lived in a module variable.
+    it('routes a call from the CJS copy to the runtime registered through ESM', () => {
+        const script = `
+            const cjs = require('./dist/index.cjs')
+            import('./dist/client/index.js').then(client => {
+                client.register({ counterId: 1, mode: 'log', pageviews: false, devWarnings: false })
+                console.info = (message) => console.log(message)
+                cjs.reachGoalUnsafe('from-cjs')
+            }).catch(e => { console.error(String(e)); process.exit(1) })
+        `
+        const out = execFileSync('node', ['-e', script], { encoding: 'utf8' })
+        expect(out).toContain('[yandex-metrica-next] reachGoal → counter 1')
+    })
 })

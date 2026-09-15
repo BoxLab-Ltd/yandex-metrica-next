@@ -14,7 +14,7 @@ import { createPageviewTracker } from './pageview.js'
 import { createHistorySignals } from './signals.js'
 import { createTitleSettler, type TitleMode } from './title.js'
 import { initCounter, type ConsentState } from './init.js'
-import { setRuntime } from './api.js'
+import { getRuntime, setRuntime } from './api.js'
 import type { BufferedCall, YmStub } from './stub.js'
 
 export interface MetricaConfig {
@@ -330,7 +330,8 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
             }
             if (registry.trackerOwner === owner) registry.trackerOwner = null
             registry.counters.delete(counterId)
-            setRuntime(null)
+            // The runtime is global now, so a stale handle must not clear a newer one.
+            if (getRuntime() === runtime) setRuntime(null)
         },
     }
 }

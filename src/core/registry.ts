@@ -1,4 +1,5 @@
 import { REGISTRY_KEY, type CounterId, version } from '../index.js'
+import type { MetricaRuntime } from './api.js'
 
 export type CounterState = {
     counterId: CounterId
@@ -30,6 +31,8 @@ export interface Registry {
     lastCommittedAt: number
     /** Diagnostic codes already printed, so each is printed exactly once. */
     seenDiagnostics: Set<string>
+    /** The registered runtime. Shared, so a CJS copy of the package reaches the same counter. */
+    runtime: MetricaRuntime | null
 }
 
 const createRegistry = (): Registry => ({
@@ -40,6 +43,7 @@ const createRegistry = (): Registry => ({
     lastCommittedUrl: null,
     lastCommittedAt: 0,
     seenDiagnostics: new Set(),
+    runtime: null,
 })
 
 type Host = Record<symbol, Registry | undefined>
@@ -58,6 +62,11 @@ export function getRegistry(): Registry {
     }
     registry.copies.set(version, (registry.copies.get(version) ?? 0) + 1)
     return registry
+}
+
+/** Reads the registry without creating it or counting a copy. */
+export function peekRegistry(): Registry | undefined {
+    return (globalThis as Host)[REGISTRY_KEY]
 }
 
 export function countCopies(registry: Registry): number {

@@ -19,6 +19,7 @@ import type {
 } from './types/tag.js'
 import type { BlockReason, CounterStatus } from './init.js'
 import type { NavigationType } from './pageview.js'
+import { getRegistry, peekRegistry } from './registry.js'
 
 export interface MetricaStatus {
     readonly state: CounterStatus | 'disabled'
@@ -46,7 +47,7 @@ export interface MetricaRuntime {
     ready(timeout: number): Promise<boolean>
 }
 
-const NOT_INSTALLED: MetricaStatus = {
+export const NOT_INSTALLED: MetricaStatus = {
     state: 'disabled',
     counterId: null,
     reason: undefined,
@@ -54,18 +55,25 @@ const NOT_INSTALLED: MetricaStatus = {
     bufferedCalls: 0,
 }
 
-let runtime: MetricaRuntime | null = null
+// Read from the global registry per call: the ESM and CJS builds are separate module instances.
+const current = (): MetricaRuntime | null => peekRegistry()?.runtime ?? null
 
 export function setRuntime(next: MetricaRuntime | null): void {
-    runtime = next
+    const registry = next === null ? peekRegistry() : getRegistry()
+    if (registry !== undefined) registry.runtime = next
+}
+
+export function getRuntime(): MetricaRuntime | null {
+    return current()
 }
 
 export const DEFAULT_CLIENT_ID_TIMEOUT = 3000
 
 const withCounter = (options?: { counterId?: CounterId }): CounterId | null =>
-    options?.counterId ?? runtime?.counterId ?? null
+    options?.counterId ?? current()?.counterId ?? null
 
 const dispatch = (event: MetricaEvent | null): void => {
+    const runtime = current()
     if (event === null || runtime === null) return
     runtime.send(event)
 }
@@ -226,6 +234,7 @@ export function addFileExtension(
 export function getClientId(
     options: { counterId?: CounterId; timeout?: number } = {},
 ): Promise<string | null> {
+    const runtime = current()
     if (runtime === null) return Promise.resolve(null)
     return runtime.clientId(options.timeout ?? DEFAULT_CLIENT_ID_TIMEOUT)
 }
@@ -233,17 +242,18 @@ export function getClientId(
 export function whenReady(
     options: { counterId?: CounterId; timeout?: number } = {},
 ): Promise<boolean> {
+    const runtime = current()
     if (runtime === null) return Promise.resolve(false)
     return runtime.ready(options.timeout ?? DEFAULT_CLIENT_ID_TIMEOUT)
 }
 
 export function isReady(): boolean {
-    return runtime?.status().state === 'ready'
+    return current()?.status().state === 'ready'
 }
 
 /** Works everywhere, including the server and a blocked tag: the main diagnostic channel. */
 export function getStatus(): MetricaStatus {
-    return runtime?.status() ?? NOT_INSTALLED
+    return current()?.status() ?? NOT_INSTALLED
 }
 
 export function armNavigation(
@@ -251,18 +261,18 @@ export function armNavigation(
     navigationType: NavigationType,
     transitionId?: string | null,
 ): void {
-    runtime?.arm(url, navigationType, transitionId)
+    current()?.arm(url, navigationType, transitionId)
 }
 
 export function grantConsent(): void {
-    runtime?.grant()
+    current()?.grant()
 }
 
 /** One-way in practice: Metrica does not guarantee a re-init of the same counter. */
 export function revokeConsent(): void {
-    runtime?.revoke()
+    current()?.revoke()
 }
 
 export function destruct(): void {
-    runtime?.destruct()
+    current()?.destruct()
 }
