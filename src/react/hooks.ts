@@ -13,6 +13,7 @@ import type { HitOptions } from '../core/types/tag.js'
 import {
     getStatus,
     hit,
+    NOT_INSTALLED,
     params,
     reachGoal,
     reachGoalUnsafe,
@@ -57,26 +58,43 @@ export function useMetrica(): MetricaApi {
 }
 
 let cachedStatus = getStatus()
+const listeners = new Set<() => void>()
+let poller: number | undefined
+
+// One poller for all consumers: per-consumer timers saw the cache already updated and skipped.
+const refresh = (): void => {
+    const next = getStatus()
+    if (
+        next.state === cachedStatus.state &&
+        next.reason === cachedStatus.reason &&
+        next.pageviewsSent === cachedStatus.pageviewsSent
+    ) {
+        return
+    }
+    cachedStatus = next
+    for (const listener of listeners) listener()
+}
 
 const subscribe = (onChange: () => void): (() => void) => {
     if (typeof window === 'undefined') return () => {}
-    const id = window.setInterval(() => {
-        const next = getStatus()
-        if (
-            next.state === cachedStatus.state &&
-            next.pageviewsSent === cachedStatus.pageviewsSent
-        ) {
-            return
+    listeners.add(onChange)
+    poller ??= window.setInterval(refresh, 250)
+    refresh()
+    return () => {
+        listeners.delete(onChange)
+        if (listeners.size === 0 && poller !== undefined) {
+            window.clearInterval(poller)
+            poller = undefined
         }
-        cachedStatus = next
-        onChange()
-    }, 250)
-    return () => void window.clearInterval(id)
+    }
 }
 
 const getSnapshot = (): MetricaStatus => cachedStatus
 
+// Hydration must match the server, where the package never runs, even if the client registered.
+const getServerSnapshot = (): MetricaStatus => NOT_INSTALLED
+
 /** Status works everywhere, including a blocked tag; it is the diagnostic channel in production. */
 export function useMetricaStatus(): MetricaStatus {
-    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
