@@ -202,6 +202,32 @@ describe('pageview tracker — arm enrichment', () => {
 
         expect(tracker.commitsWithoutArm).toBe(0)
     })
+
+    // A one-second window turned every slow response into an unarmed commit and a false YM304.
+    it('keeps the arm for a page that takes seconds to commit', () => {
+        const tracker = build()
+        tracker.trackNow(`${ORIGIN}/a`)
+
+        tracker.arm('/slow', 'push')
+        vi.advanceTimersByTime(4000)
+        navigate('/slow')
+        settle()
+
+        expect(sent[1]?.context.navigationType).toBe('push')
+        expect(tracker.commitsWithoutArm).toBe(0)
+    })
+
+    it('lets an arm expire once a commit could no longer belong to it', () => {
+        const tracker = build()
+        tracker.trackNow(`${ORIGIN}/a`)
+
+        tracker.arm('/b', 'push')
+        vi.advanceTimersByTime(11_000)
+        navigate('/b')
+        settle()
+
+        expect(sent[1]?.context.navigationType).toBe('unknown')
+    })
 })
 
 describe('pageview tracker — filtering', () => {

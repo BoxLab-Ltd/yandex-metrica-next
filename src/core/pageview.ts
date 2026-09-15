@@ -63,7 +63,8 @@ const DEFAULTS = {
     maxPerMinute: 60,
 } as const
 
-const ARM_WINDOW_MS = 1000
+// The spec's commitTimeout: a dynamic page commits only after it renders, often seconds later.
+const ARM_WINDOW_MS = 10_000
 
 type Armed = {
     url: string

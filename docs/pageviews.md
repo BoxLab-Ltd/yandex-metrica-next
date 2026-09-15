@@ -116,7 +116,7 @@ on historyWrite(url):
   next = normalize(url)                  # basePath, strip, trailingSlash, absolute
   if next === lastCommittedUrl: return   # init роутера, refresh(), повторный push
   if pendingTimer: clearTimeout(pendingTimer)   # отмена: redirect, двойной клик
-  pending = { url: next, arm: armWithin(next, 1000) }
+  pending = { url: next, arm: armWithin(next, 10000) }
   pendingTimer = setTimeout(flush, commitDebounce /* 100 */)
 
 flush():
@@ -132,6 +132,9 @@ on onRouterTransitionStart(url, navigationType, event):
   armLog.push({ url: normalize(url), navigationType, id: event?.id ?? null, at: now() })
   # ARM ничего не отправляет — только обогащает ближайший COMMIT
 ```
+
+Окно — 10 с, как `commitTimeout`, а не 1 с, как в первой редакции: динамическая страница коммитится только
+после рендера, и e2e показал, что ответ сервера дольше секунды превращал правильно установленный хук в ложный YM304.
 
 `armWithin(url, ms)` ищет в `armLog` запись с тем же нормализованным URL не старше `ms`; если не нашлось —
 `navigationType: 'unknown'` и счётчик для YM304.
