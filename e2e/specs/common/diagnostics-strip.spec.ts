@@ -8,16 +8,7 @@ test('diagnostic messages reach development bundles and are stripped from produc
     await page.goto(metrica.path('/a'))
     await metrica.expectHits([{ url: metrica.url('/a') }])
 
-    const sources = await page.evaluate(() =>
-        [...document.scripts].map(script => script.src).filter(Boolean),
-    )
-    const bundle = (
-        await Promise.all(
-            sources.map(async source =>
-                (await page.request.get(source)).text(),
-            ),
-        )
-    ).join('\n')
+    const bundle = await metrica.appScripts()
 
     // Without the package in the fetched chunks, a missing message would prove nothing.
     expect(bundle).toContain('@boxlab/yandex-metrica-next.registry.v1')

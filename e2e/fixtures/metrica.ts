@@ -142,6 +142,24 @@ export class MetricaSpy {
         this.calls.length = 0
     }
 
+    /**
+     * Text of the scripts the app itself serves. Third-party sources are dropped rather
+     * than fetched: `page.request` is a Node-side stack that neither the route handlers nor
+     * the browser's resolver rules can hold back, so fetching the tag here reaches Yandex.
+     */
+    async appScripts(): Promise<string> {
+        const sources = await this.page.evaluate(() =>
+            [...document.scripts].map(script => script.src).filter(Boolean),
+        )
+        const own = sources.filter(source => source.startsWith(this.origin))
+        const bodies = await Promise.all(
+            own.map(async source =>
+                (await this.page.request.get(source)).text(),
+            ),
+        )
+        return bodies.join('\n')
+    }
+
     /** Exact length and order after a grace period: a late extra hit is the duplicate we hunt. */
     async expectHits(
         expected: readonly Partial<Hit>[],
