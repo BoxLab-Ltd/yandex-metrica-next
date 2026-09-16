@@ -148,9 +148,20 @@ export class MetricaSpy {
      * the browser's resolver rules can hold back, so fetching the tag here reaches Yandex.
      */
     async appScripts(): Promise<string> {
-        const sources = await this.page.evaluate(() =>
-            [...document.scripts].map(script => script.src).filter(Boolean),
-        )
+        const sources = await this.page.evaluate(() => {
+            // Performance entries as well as the DOM: a bundler removes a chunk's script
+            // element once it has run, and which ones are still there is a race.
+            const loaded = performance
+                .getEntriesByType('resource')
+                .filter(
+                    entry =>
+                        (entry as PerformanceResourceTiming).initiatorType ===
+                        'script',
+                )
+                .map(entry => entry.name)
+            const present = [...document.scripts].map(script => script.src)
+            return [...new Set([...present, ...loaded])].filter(Boolean)
+        })
         const own = sources.filter(source => source.startsWith(this.origin))
         const bodies = await Promise.all(
             own.map(async source =>
