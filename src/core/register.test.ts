@@ -99,6 +99,17 @@ describe('register — guards', () => {
         expect(getRegistry().trackerOwner).toBe(owner)
     })
 
+    it('reports YM103 when a second copy of the package is loaded', () => {
+        const onDiagnostic = vi.fn()
+        getRegistry().copies.set('0.0.0-duplicate', 1)
+
+        start({ devWarnings: true, onDiagnostic })
+
+        expect(onDiagnostic).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'YM103' }),
+        )
+    })
+
     it('does not install a second tag for a duplicate register', () => {
         start()
         start()

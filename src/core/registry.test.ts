@@ -27,12 +27,12 @@ describe('getRegistry', () => {
         expect(getRegistry()).toBe(getRegistry())
     })
 
-    it('counts copies of the same version instead of collapsing them', () => {
+    it('counts one copy per module instance, not one per call', () => {
         const registry = getRegistry()
         getRegistry()
         getRegistry()
-        // A Set would report 1 here, hiding the most common pnpm duplicate case.
-        expect(countCopies(registry)).toBe(3)
+        // The number exists to reveal a second copy of the package, not a busy caller.
+        expect(countCopies(registry)).toBe(1)
         expect(registry.copies.size).toBe(1)
     })
 })

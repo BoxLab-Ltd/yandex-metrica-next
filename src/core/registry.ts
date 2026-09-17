@@ -51,6 +51,10 @@ const createRegistry = (): Registry => ({
 
 type Host = Record<symbol, Registry | undefined>
 
+// Per module instance, so the number answers "how many copies of the package are loaded"
+// rather than "how many times did someone ask for the registry".
+const counted = new WeakSet<Registry>()
+
 /**
  * State lives on globalThis, not in a module variable: ESM and CJS resolve to different
  * module instances, and pnpm can install two copies of the package. A module-level
@@ -63,7 +67,10 @@ export function getRegistry(): Registry {
         registry = createRegistry()
         host[REGISTRY_KEY] = registry
     }
-    registry.copies.set(version, (registry.copies.get(version) ?? 0) + 1)
+    if (!counted.has(registry)) {
+        counted.add(registry)
+        registry.copies.set(version, (registry.copies.get(version) ?? 0) + 1)
+    }
     return registry
 }
 

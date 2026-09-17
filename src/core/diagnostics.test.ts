@@ -29,12 +29,12 @@ describe('diagnostics', () => {
 
     it('tracks each code independently', () => {
         report('YM201')
-        expect(report('YM203')).not.toBeNull()
+        expect(report('YM103')).not.toBeNull()
     })
 
     it('routes by level', () => {
         report('YM201')
-        report('YM203')
+        report('YM103')
         report('YM401')
         expect(console.error).toHaveBeenCalledTimes(1)
         expect(console.warn).toHaveBeenCalledTimes(1)

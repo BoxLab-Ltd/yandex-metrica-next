@@ -8,7 +8,7 @@ import type { MetricaDomain } from './loader.js'
 import type { MetricaRuntime, MetricaStatus } from './api.js'
 import { report } from './diagnostics.js'
 import { createLogSink, resolveMode } from './mode.js'
-import { getRegistry } from './registry.js'
+import { countCopies, getRegistry } from './registry.js'
 import { createCallPipeline } from './call.js'
 import { createPageviewTracker } from './pageview.js'
 import { createHistorySignals } from './signals.js'
@@ -101,6 +101,12 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
     if (resolved.foreignYm) warn('YM104')
 
     const registry = getRegistry()
+    if (countCopies(registry) > 1) {
+        warn(
+            'YM103',
+            `Loaded: ${[...registry.copies].map(([v, n]) => `${v}\u00d7${String(n)}`).join(', ')}.`,
+        )
+    }
     const existing = registry.counters.get(counterId)
     // StrictMode mounts twice; a second register must not mean a second counter.
     if (existing !== undefined && registry.trackerOwner !== null) {

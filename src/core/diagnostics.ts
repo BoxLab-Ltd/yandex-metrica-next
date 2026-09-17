@@ -3,10 +3,10 @@ import { getRegistry } from './registry.js'
 export type DiagnosticCode =
     | 'YM101'
     | 'YM102'
+    | 'YM103'
     | 'YM104'
     | 'YM201'
     | 'YM202'
-    | 'YM203'
     | 'YM301'
     | 'YM302'
     | 'YM303'
@@ -74,6 +74,10 @@ export function report(
             level: 'error',
             text: 'counterId does not look like a Metrica counter: expected a positive integer.',
         },
+        YM103: {
+            level: 'warn',
+            text: 'More than one copy of the package is loaded in this document. Deduplicate it in the dependency tree: every copy ships its own code.',
+        },
         YM104: {
             level: 'warn',
             text: 'An existing window.ym was found. Log mode leaves it alone, so calls made through it are not intercepted.',
@@ -81,10 +85,6 @@ export function report(
         YM201: {
             level: 'error',
             text: 'The tag did not initialise within initTimeout. Likely an ad blocker, a CSP rule, or the network.',
-        },
-        YM203: {
-            level: 'warn',
-            text: 'The same counter was initialised twice. Keep a single init per counter.',
         },
         YM202: {
             level: 'error',
@@ -143,10 +143,10 @@ export function report(
 export const diagnosticCodes: DiagnosticCode[] = [
     'YM101',
     'YM102',
+    'YM103',
     'YM104',
     'YM201',
     'YM202',
-    'YM203',
     'YM301',
     'YM302',
     'YM303',
