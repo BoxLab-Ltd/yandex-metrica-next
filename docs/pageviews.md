@@ -1,26 +1,28 @@
-# Спецификация просмотров
+# Pageview specification
 
-> Контракт поведения трекера. Замораживается в v1.0.
-> Раздел 1 — результаты probe 0.5, снятые на живом стенде 2026-08-21.
-> Стенд: `research/probe05/` (Next 16.3.3, React 19.2.8, Turbopack, prod-сборка, Chromium 151 через Playwright).
+> The tracker's behavioural contract. It freezes in v1.0.
+> Section 1 records what was measured on a live stand on 2026-08-21: Next 16.3.3, React 19.2.8,
+> Turbopack, production build, Chromium 151 driven by Playwright.
+> Every row of the table in section 3 is covered by the e2e matrix, on both routers.
 
 ---
 
-## 1. Что показал probe 0.5
+## 1. What the probe showed
 
-Стенд патчит `history.pushState`/`replaceState`, слушает `popstate` и `pageshow`, наблюдает `<title>`
-двумя MutationObserver (на самом узле и на `document.head`) и логирует `onRouterTransitionStart`.
-Двенадцать сценариев прогнаны на production-сборке.
+The stand patched `history.pushState`/`replaceState`, listened for `popstate` and `pageshow`,
+watched `<title>` with two MutationObservers — one on the node, one on `document.head` — and
+logged `onRouterTransitionStart`. Twelve scenarios were run against a production build.
 
-### 1.1 Порядок сигналов одинаков для всех навигаций
+### 1.1 The order of signals is the same for every navigation
 
 ```
-ARM  onRouterTransitionStart  url=/b type=push   loc=/a     ← намерение
-     history.pushState        url=/b loc=/a                 ← +3…7 мс, location ещё СТАРЫЙ
-     title.NODE_REPLACED      now="page-b"                  ← +0…1 мс
+ARM  onRouterTransitionStart  url=/b type=push   loc=/a     ← intent
+     history.pushState        url=/b loc=/a                 ← +3…7 ms, location is still the OLD one
+     title.NODE_REPLACED      now="page-b"                  ← +0…1 ms
 ```
 
-`replace` и `traverse` отличаются только методом (`replaceState`) и наличием `popstate` перед ARM:
+`replace` and `traverse` differ only by the method (`replaceState`) and by a `popstate` before
+the ARM:
 
 ```
 popstate                      loc=/a
@@ -28,216 +30,225 @@ ARM  onRouterTransitionStart  url=http://localhost:4055/a type=traverse
      history.replaceState     url=/a loc=/a
 ```
 
-Для `traverse` в ARM приходит **абсолютный** URL, для `push`/`replace` — **root-relative**. Нормализатор
-обязан принимать оба.
+For `traverse` the hook reports an **absolute** URL, for `push` and `replace` a **root-relative**
+one. The normaliser has to accept both.
 
-### 1.2 Записи history без ARM — четыре разных случая
+### 1.2 History writes with no ARM — four different cases
 
-| Случай                             | Наблюдение                                                                    | Как отличить               |
-| ---------------------------------- | ----------------------------------------------------------------------------- | -------------------------- |
-| Инициализация роутера              | `replaceState url=/a loc=/a` через ~15 мс после старта модуля                 | URL не изменился           |
-| `router.refresh()`                 | `replaceState url=/a loc=/a`                                                  | URL не изменился           |
-| Повторный `push` на текущий URL    | `replaceState url=/b loc=/b`                                                  | URL не изменился           |
-| Userland `history.pushState('/x')` | `pushState url=/x loc=/a`, затем Next сам делает `replaceState url=/x loc=/x` | URL изменился, ARM не было |
+| Case                               | Observation                                                             | How it is told apart   |
+| ---------------------------------- | ----------------------------------------------------------------------- | ---------------------- |
+| Router initialisation              | `replaceState url=/a loc=/a` about 15 ms after the module runs          | the URL did not change |
+| `router.refresh()`                 | `replaceState url=/a loc=/a`                                            | the URL did not change |
+| A repeat `push` to the current URL | `replaceState url=/b loc=/b`                                            | the URL did not change |
+| Userland `history.pushState('/x')` | `pushState url=/x loc=/a`, then Next's own `replaceState url=/x loc=/x` | URL changed, no ARM    |
 
-**Правило:** три первых случая отсекаются одним условием «нормализованный URL изменился».
-Отдельного детектора `refresh()` не нужно.
+**Rule:** one condition — "the normalised URL changed" — removes the first three. No dedicated
+detector for `refresh()` is needed.
 
-### 1.3 Забытый реэкспорт хука ≠ ноль хитов
+### 1.3 A forgotten re-export is not zero hits
 
-Прогон с `instrumentation-client.ts` **без** `export { onRouterTransitionStart }`:
+A run with an `instrumentation-client.ts` that does **not** re-export the hook:
 
 ```
-ЗАГРУЗКА:      instrumentation-client executed  ← модуль исполняется
-PUSH /b:       history.pushState url=/b loc=/a  ← навигация видна
-               (ARM отсутствует)
+LOAD:      instrumentation-client executed  ← the module runs
+PUSH /b:   history.pushState url=/b loc=/a  ← the navigation is visible
+           (no ARM)
 ```
 
-Модуль исполняется, тег поднимается, первый просмотр уходит, навигации **наблюдаются через history**.
-Теряется только `navigationType`.
+The module runs, the tag comes up, the first pageview is sent and navigations are still observed
+through history. Only `navigationType` is lost.
 
-**Отсюда архитектура трекера:**
+**Hence the shape of the tracker:**
 
-- **COMMIT** = запись history, при которой нормализованный URL изменился. Самодостаточен.
-- **ARM** (`onRouterTransitionStart`) = **опциональное обогащение**: даёт `navigationType` и `transitionId`.
+- **COMMIT** = a history write whose normalised URL changed. Self-sufficient.
+- **ARM** (`onRouterTransitionStart`) = **optional enrichment**: it supplies `navigationType` and
+  `transitionId`.
 
-Трекер работает без хука и деградирует в `navigationType: 'unknown'`. Диагностика **YM304** остаётся
-рабочей и осмысленной: «несколько COMMIT со сменой pathname без единого ARM → похоже, забыт реэкспорт;
-тип навигации будет `unknown`». Это **warning**, не error.
+The tracker works without the hook and degrades to `navigationType: 'unknown'`. YM304 stays a
+useful warning at warn level rather than an error.
 
-> Это исправляет утверждение прежней редакции плана, что забытый реэкспорт даёт ноль навигационных хитов.
-> Он их не даёт только при трекере, построенном как «COMMIT строго после ARM» — от такой конструкции отказались.
+### 1.4 Cancellation: a redirect and a double click both need a debounce
 
-### 1.4 Отмена: redirect и двойной клик требуют дебаунса
-
-`redirect()` из Server Component (`/redir` → `/b`) порождает **две полные пары ARM+COMMIT**:
+`redirect()` from a Server Component (`/redir` → `/b`) produces **two full ARM+COMMIT pairs**:
 
 ```
 ARM url=/redir type=push;  pushState url=/redir;     title.NODE_REPLACED now="root"
-ARM url=/b type=replace;   replaceState url=/b;      title.NODE_REPLACED now="page-b"   ← +1 мс
+ARM url=/b type=replace;   replaceState url=/b;      title.NODE_REPLACED now="page-b"   ← +1 ms
 ```
 
-Просмотр `/redir` физически «случился» в history — то есть ни ARM-, ни COMMIT-сигнал сам по себе его
-не отсекает. Двойной клик (`push('/b')`, через 20 мс `push('/a')`) даёт ту же картину с разрывом 14 мс.
+The `/redir` pageview physically happened in history — neither signal rejects it on its own. A
+double click (`push('/b')`, then `push('/a')` 20 ms later) produces the same picture with a 14 ms
+gap.
 
-**Правило:** отправка COMMIT откладывается на `commitDebounce` (**100 мс**); новый COMMIT отменяет
-предыдущий неотправленный. Реальные разрывы — 1 мс и 14 мс — покрываются с запасом. Цена: два осмысленных
-клика пользователя внутри 100 мс схлопнутся в один просмотр; это приемлемо.
+**Rule:** sending a COMMIT is deferred by `commitDebounce` (**100 ms**), and a newer COMMIT
+cancels the pending one. The real gaps — 1 ms and 14 ms — are covered with room to spare. The
+price: two deliberate clicks inside 100 ms collapse into one pageview, which is acceptable.
 
-### 1.5 React 19 заменяет узел `<title>` целиком
+### 1.5 React 19 replaces the whole `<title>` node
 
-`title.NODE_REPLACED` срабатывает при **каждой** навигации, включая случай, когда текст заголовка
-не меняется (сценарий 12: `document.title` заранее выставлен в `page-b`, переход на `/b` — узел всё равно
-заменён).
+`title.NODE_REPLACED` fires on **every** navigation, including when the text does not change
+(scenario 12: `document.title` was set to `page-b` in advance and the node was still replaced on
+the way to `/b`).
 
-Следствия:
+Consequences:
 
-- **Наблюдать надо `document.head` с `childList: true`.** Наивный `observe(titleEl, { childList: true,
-characterData: true })` пропустит смену: старый узел выбрасывается из DOM, и обсервер на нём умолкает.
-- Сигнал приходит **через 0–1 мс** после записи history — то есть `title` готов практически мгновенно.
-  `titleTimeout: 400` избыточен, но безопасен как страховка.
-- Ранний резолв title-settle надёжен даже на двух страницах с одинаковым заголовком.
+- **Watch `document.head` with `childList: true`.** The naive
+  `observe(titleEl, { childList: true, characterData: true })` misses the change: the old node
+  leaves the DOM and an observer on it goes silent.
+- The signal arrives **0–1 ms** after the history write, so the title is ready almost
+  immediately. `titleTimeout: 400` is insurance, not the normal path.
+- Resolving early is reliable even for two pages with the same title.
 
-### 1.6 Третий аргумент хука
+### 1.6 The hook's third argument
 
-С `experimental.instrumentationClientRouterTransitionEvents: true` приходит
-`{ id: 'mt974bqt-1', ... }` — идентификатор вида `${base36(Date.now())}-${counter}`, уникальный в пределах
-загрузки страницы. Без флага — строго `null`, и ветка вырезается DCE. Пакет **не включает** чужой
-экспериментальный флаг; `transitionId` используется, только если он пришёл.
+With `experimental.instrumentationClientRouterTransitionEvents: true` it arrives as
+`{ id: 'mt974bqt-1', … }` — an identifier shaped like `${base36(Date.now())}-${counter}`, unique
+within one page load. Without the flag it is strictly `null` and the branch is dropped by DCE.
+The package does not turn anyone else's experimental flag on; `transitionId` is used only when it
+is there.
 
 ---
 
-## 2. Алгоритм трекера
+## 2. The tracker's algorithm
 
 ```
-COMMIT-сигнал: патч history.pushState / history.replaceState + popstate
+COMMIT signal: patched history.pushState / history.replaceState + popstate
 
 on historyWrite(url):
   next = normalize(url)                  # basePath, strip, trailingSlash, absolute
-  if next === lastCommittedUrl: return   # init роутера, refresh(), повторный push
-  if pendingTimer: clearTimeout(pendingTimer)   # отмена: redirect, двойной клик
-  pending = { url: next, arm: armWithin(next, 10000) }
+  if next === lastCommittedUrl: return   # router init, refresh(), repeat push
+  if pendingTimer: clearTimeout(pendingTimer)   # cancellation: redirect, double click
+  pending = { url: next, arm: armWithin(next, commitTimeout) }
   pendingTimer = setTimeout(flush, commitDebounce /* 100 */)
 
 flush():
   lastCommittedUrl = pending.url
   if !shouldTrack(ctx): return
   if quotaExceeded(): warn(YM312); return
-  title = await settleTitle(titleTimeout /* 400 */)   # MutationObserver на document.head
+  title = await settleTitle(titleTimeout /* 400 */)   # MutationObserver on document.head
   event = beforeSend({ type: 'pageview', url: pending.url, title, ... })
   if event === null: return
   enqueue(() => ym(counterId, 'hit', event.url, { title: event.title, params: event.params }))
 
 on onRouterTransitionStart(url, navigationType, event):
   armLog.push({ url: normalize(url), navigationType, id: event?.id ?? null, at: now() })
-  # ARM ничего не отправляет — только обогащает ближайший COMMIT
+  # an ARM sends nothing — it only enriches the nearest COMMIT
 ```
 
-Окно — 10 с, как `commitTimeout`, а не 1 с, как в первой редакции: динамическая страница коммитится только
-после рендера, и e2e показал, что ответ сервера дольше секунды превращал правильно установленный хук в ложный YM304.
+The window is `commitTimeout` (10 s), not the 1 s of the first draft: a dynamic page commits only
+once it has rendered, and the e2e matrix showed that a server response slower than a second turned
+a correctly installed hook into a false YM304.
 
-`armWithin(url, ms)` ищет в `armLog` запись с тем же нормализованным URL не старше `ms`; если не нашлось —
-`navigationType: 'unknown'` и счётчик для YM304.
-
----
-
-## 3. Поведенческая таблица
-
-| Событие                          | Решение                                                                                                                   | Опция (дефолт)               |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Первый просмотр после загрузки   | всегда, из `register()`; `referer` = `document.referrer`                                                                  | `pageviews.first` (`true`)   |
-| push / replace / traverse        | просмотр по COMMIT                                                                                                        | `navigationTypes`            |
-| Смена только query               | не просмотр                                                                                                               | `trigger` (`'pathname'`)     |
-| Смена только hash                | не просмотр                                                                                                               | `trackHashChanges` (`false`) |
-| `router.refresh()`               | не просмотр — URL не изменился                                                                                            | —                            |
-| Инициализация роутера            | не просмотр — URL не изменился                                                                                            | —                            |
-| Userland `history.pushState`     | просмотр (URL изменился, ARM нет)                                                                                         | `trackHistoryApi` (`true`)   |
-| `redirect()` из Server Component | просмотр только конечного URL                                                                                             | `commitDebounce` (`100`)     |
-| Отменённый транзишен             | просмотр только последнего URL                                                                                            | `commitDebounce`             |
-| Intercepting / parallel route    | просмотр — URL реально сменился; `title` — тот, что в документе (Next не применяет метаданные слота при мягкой навигации) | `shouldTrack`                |
-| bfcache (`pageshow.persisted`)   | не слать                                                                                                                  | `bfcache` (`'ignore'`)       |
-| Тег ещё не загрузился            | вызов в буфер, флаш при готовности                                                                                        | —                            |
-
-Числовые дефолты: `commitDebounce` 100, `dedupeWindow` 500, `commitTimeout` 10 000, `titleTimeout` 400,
-`searchDebounce` 500, `initTimeout` 5 000, буфер вызовов 100, `maxPerMinute` 60, усечение URL 2048.
+`armWithin(url, ms)` looks in `armLog` for an entry with the same normalised URL no older than
+`ms`. When there is none, the pageview carries `navigationType: 'unknown'` and counts toward
+YM304.
 
 ---
 
-## 4. Что считается ломающим изменением
+## 3. Behaviour table
 
-Изменение наблюдаемого **числа или URL** хитов при том же коде пользователя — это breaking по смыслу,
-даже когда сигнатуры не менялись: оно ломает отчёты, а не компиляцию. Правило: minor в 0.x, major с 1.0,
-и обязательный раздел «что изменится в ваших цифрах» в релиз-нотах.
+| Event                              | Decision                                                                                                                             | Option (default)             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| First pageview after load          | always, from `register()`; `referer` = `document.referrer`                                                                           | `pageviews.first` (`true`)   |
+| push / replace / traverse          | a pageview on COMMIT                                                                                                                 | `navigationTypes`            |
+| Query-only change                  | not a pageview                                                                                                                       | `trigger` (`'pathname'`)     |
+| Hash-only change                   | not a pageview                                                                                                                       | `trackHashChanges` (`false`) |
+| `router.refresh()`                 | not a pageview — the URL did not change                                                                                              | —                            |
+| Router initialisation              | not a pageview — the URL did not change                                                                                              | —                            |
+| Userland `history.pushState`       | a pageview (the URL changed, no ARM)                                                                                                 | `trackHistoryApi` (`true`)   |
+| `redirect()` in a Server Component | only the destination is reported                                                                                                     | `commitDebounce` (`100`)     |
+| An interrupted navigation          | only the last URL is reported                                                                                                        | `commitDebounce`             |
+| Intercepting / parallel route      | a pageview — the URL really changed; the `title` is the document's, since Next does not apply a slot's metadata on a soft navigation | `shouldTrack`                |
+| bfcache (`pageshow.persisted`)     | nothing is sent                                                                                                                      | `bfcache` (`'ignore'`)       |
+| The tag has not loaded yet         | the call waits in the buffer and is flushed when it is ready                                                                         | —                            |
+
+Numeric defaults: `commitDebounce` 100, `dedupeWindow` 500, `commitTimeout` 10 000,
+`titleTimeout` 400, `searchDebounce` 500, `initTimeout` 5 000, call buffer 100, `maxPerMinute` 60,
+URL truncation at 2048.
 
 ---
 
-## 5. Результаты остальных экспериментов (2026-08-21)
+## 4. What counts as a breaking change
 
-### Э5 — зеркала: тег НЕ выбирает домен по гео. ЗАКРЫТО
+A change in the observable **number or URL** of hits for unchanged user code is breaking in
+substance, even when no signature moved: it breaks reports rather than compilation. The rule is
+minor in 0.x, major from 1.0, and release notes that say what changes in your numbers.
 
-Разбор живого `tag.js` (291 КБ):
+---
 
-- домены в коде — ровно два: `mc.yandex.ru` и `mc.yandex.md`;
-- хост сбора **захардкожен**: `host:"mc.yandex.ru"`;
-- `geo`, `country`, `tld` — ноль вхождений; `region` встречается 4 раза и только в контексте **consent**
-  (`"granted"===…`), то есть про регуляторные регионы, а не про выбор зеркала;
-- `mc.webvisor.com/.org` в `tag.js` отсутствуют — они живут в отдельно догружаемом модуле Вебвизора.
+## 5. Results of the other experiments (2026-08-21)
 
-**Следствия для `metricaCsp()`:** дефолт `regions: ['ru']` безопасен — трафик сбора идёт на `mc.yandex.ru`.
-Но **`mc.yandex.md` обязан быть в `connect-src` всегда**: тег ходит на `https://mc.yandex.md/cc` —
-это служебный consent-эндпоинт, и без него ломается механизм согласия. Хосты Вебвизора добавляются
-при `webvisor: true`, как и планировалось.
+### E5 — mirrors: the tag does not pick a domain by geography. CLOSED
 
-### Э6 — циклический type-импорт под `isolatedDeclarations`: работает. ЗАКРЫТО
+Taking the live `tag.js` (291 KB) apart:
 
-Собран мини-пакет (tsdown + `unbundle: true` + `dts` через oxc, `isolatedDeclarations: true`) с намеренным
-циклом `index.ts ↔ types/goals.ts`. Результат:
+- exactly two domains appear in the code: `mc.yandex.ru` and `mc.yandex.md`;
+- the collection host is **hard-coded**: `host:"mc.yandex.ru"`;
+- `geo`, `country` and `tld` do not occur at all; `region` occurs four times and only around
+  **consent** (`"granted"===…`), that is regulatory regions rather than mirror selection;
+- `mc.webvisor.com/.org` are absent from `tag.js` — they live in the separately loaded Session
+  Replay module.
+
+**Consequences for `metricaCsp()`:** the `regions: ['ru']` default is safe, because collection
+goes to `mc.yandex.ru`. But **`mc.yandex.md` has to be in `connect-src` at all times**: the tag
+calls `https://mc.yandex.md/cc`, the consent endpoint, and without it that mechanism breaks.
+Session Replay hosts are added when `webvisor: true`, as planned.
+
+### E6 — a cyclic type import under `isolatedDeclarations`: it works. CLOSED
+
+A miniature package was built (tsdown, `unbundle: true`, declarations through oxc,
+`isolatedDeclarations: true`) with a deliberate cycle between `index.ts` and `types/goals.ts`:
 
 ```ts
-// dist/index.d.ts — реестр объявлен ЗДЕСЬ, а не реэкспортирован
+// dist/index.d.ts — the registry is declared HERE rather than re-exported
 import { GoalArgs, GoalName } from './types/goals.js'
 interface MetricaGoalRegistry {}
 export { type GoalArgs, type GoalName, MetricaGoalRegistry, reachGoal }
 
-// dist/types/goals.d.ts — обратная ссылка на цикл сохранена
+// dist/types/goals.d.ts — the back reference of the cycle survives
 import { MetricaGoalRegistry } from '../index.js'
 ```
 
-Потребитель с `declare module` и `@ts-expect-error` на опечатке проходит `tsc --noEmit` чисто —
-аугментация видна **и из корня, и из сабпаса `/react`**, а опечатка ловится именно из сабпаса.
-Схема §3.2 плана рабочая, дыра №24 закрыта, детектор для тайп-фикстуры воспроизводится.
+A consumer with `declare module` and a `@ts-expect-error` on a typo passes `tsc --noEmit`
+cleanly: the augmentation is visible **both from the root and from the `/react` subpath**, and the
+typo is caught from the subpath. The scheme works, and the detector for the type fixture
+reproduces.
 
-### Э3 — требует реального счётчика. ПЕРЕНЕСЁН на этап 0.4
+### E3 — needs a real counter. DEFERRED to the staging counter
 
-Изолированный стенд с подменой сети **не воспроизводит рабочий цикл тега**. Причина установлена:
-реальный `mc.yandex.ru/watch/{id}` отвечает **302 с набором `set-cookie`** (`yandexuid`, `ymex`, `i`, `bh`),
-а cookie домена `.yandex.ru` при `route.fulfill` из локального origin не сохраняются. Без них счётчик
-переходит в деградированный режим: первый (автоматический) хит уходит, а **все последующие
-`ym(id,'hit',…)` молча не отправляются** — проверено на трёх формах URL (чужой origin, свой абсолютный,
-относительный). Подмена ответа на 302 с cookie ситуацию не меняет.
+An isolated stand with the network replaced **does not reproduce the tag's working cycle**. The
+cause is established: the real `mc.yandex.ru/watch/{id}` answers **302 with a set of cookies**
+(`yandexuid`, `ymex`, `i`, `bh`), and cookies for `.yandex.ru` are not stored when the response
+is fulfilled from a local origin. Without them the counter degrades: the first, automatic hit
+goes out and **every later `ym(id,'hit',…)` quietly does not** — checked against three URL forms
+(a foreign origin, an absolute local one, a relative one). Answering with a 302 that carries
+cookies does not change it.
 
-Вопрос «применяется ли `defer` к `hit`, попавшему в очередь до `init`» решается только на staging-счётчике,
-куда отправка законна. До тех пор инвариант «`defer:true` форсирован» держится как проектное допущение.
+Whether `defer` and `sendTitle` apply to a `hit` that entered `ym.a` **before** `init` can only be
+settled on a staging counter, where sending is legitimate. Until then the invariant "`defer: true`
+is forced" stands as a design assumption.
 
-### Побочная находка, которая меняет тестовую стратегию
+### The side finding that changed the test strategy
 
-План предписывал «три рубежа против загрязнения: `page.route` перехватывает `mc.yandex.*` **по умолчанию**».
-Эксперимент показал: **при полном перехвате тег деградирует после первого хита**. То есть e2e с перехватом
-проверяет только начальный просмотр, а навигационные хиты — главное, что продаёт пакет, — не проверяет вовсе.
+The plan called for "three lines of defence against polluting a real counter: `page.route`
+intercepts `mc.yandex.*` **by default**". The experiment showed that **with everything
+intercepted the tag degrades after its first hit**. An e2e suite built on network assertions
+would therefore verify the initial pageview and nothing else — not the navigation hits, which are
+the whole point of the package.
 
-Что делать вместо: разделить два класса e2e.
+What replaced it: two classes of e2e.
 
-| Класс                                | Сеть                               | Что проверяет                                                                             |
-| ------------------------------------ | ---------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Оффлайн** (в CI на каждый PR)      | `mc.yandex.*` перехвачен           | что **пакет вызвал** `ym(...)` с нужными аргументами — шпион на `window.ym`, а не на сети |
-| **Онлайн** (nightly + перед релизом) | реальная сеть, **staging-счётчик** | что хиты реально уходят и доезжают до отчётов                                             |
+| Class                                | Network                             | What it proves                                                                        |
+| ------------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------- |
+| **Offline** (every PR)               | every Metrica host intercepted      | that **the package called** `ym(...)` with the right arguments — a spy on `window.ym` |
+| **Online** (nightly, before release) | the real network, a staging counter | that hits actually leave and arrive in the reports                                    |
 
-Ассерты оффлайн-класса переносятся с сетевого слоя на `window.ym`: это и надёжнее, и не зависит
-от внутренних состояний тега. Перехват сети остаётся как страховка от утечки, а не как источник истины.
+The offline assertions moved from the network layer to `window.ym`: more reliable, and
+independent of the tag's internal state. Interception stays as a guard against leaking, not as
+the source of truth.
 
-### Осталось
+### What is left
 
-| #   | Вопрос                                                                                  | Влияние                                               |
-| --- | --------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Э3  | `defer`/`sendTitle` для `hit` из очереди до `init`                                      | инвариант И3; решается на staging-счётчике (этап 0.4) |
-| —   | Компонентный путь: даёт ли `useEffect([pathname])` те же COMMIT-точки, что патч history | вторая ячейка e2e-матрицы                             |
+| #   | Question                                             | Impact                                                     |
+| --- | ---------------------------------------------------- | ---------------------------------------------------------- |
+| E3  | `defer`/`sendTitle` for a `hit` queued before `init` | the forced-`defer` invariant; settled on a staging counter |
