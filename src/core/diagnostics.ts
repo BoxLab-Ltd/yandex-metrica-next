@@ -104,7 +104,7 @@ export function report(
         },
         YM304: {
             level: 'warn',
-            text: 'Route commits are arriving with no matching onRouterTransitionStart. Re-export the hook from instrumentation-client.ts, otherwise navigationType stays "unknown".',
+            text: 'Route commits are arriving with no matching onRouterTransitionStart, so navigationType stays "unknown". Pageviews are unaffected. Re-export the hook if you install through instrumentation-client.ts; on the component path there is nothing to re-export.',
         },
         YM312: {
             level: 'warn',
