@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { diagnosticCodes, report } from './diagnostics.js'
 import { createLogSink, resolveMode } from './mode.js'
@@ -19,6 +20,17 @@ describe('diagnostics', () => {
     it('ships exactly the thirteen v0.1 codes', () => {
         expect(diagnosticCodes).toHaveLength(13)
         expect(diagnosticCodes).not.toContain('YM501')
+    })
+
+    // Every message links to docs/diagnostics.md#<code>, so a code without its own bare
+    // heading ships a 404 to whoever follows the link.
+    it('documents every code it can print, in order', () => {
+        const docs = readFileSync('docs/diagnostics.md', 'utf8')
+        const documented = [...docs.matchAll(/^## (YM\d{3})$/gm)].map(
+            match => match[1],
+        )
+
+        expect(documented).toEqual(diagnosticCodes)
     })
 
     it('prints a code at most once', () => {
