@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { register } from './register.js'
 import { getRegistry } from './registry.js'
-import { getStatus, isReady, reachGoalUnsafe, setRuntime } from './api.js'
+import {
+    getStatus,
+    grantConsent,
+    isReady,
+    reachGoalUnsafe,
+    setRuntime,
+} from './api.js'
 import {
     installYmMock,
     resetMetricaRegistry,
@@ -141,6 +147,55 @@ describe('register — guards', () => {
         const handle = register({ counterId: COUNTER, mode: 'off' })
         expect(handle.counterId).toBeNull()
         expect(mock.calls).toHaveLength(0)
+    })
+})
+
+describe('register — consent', () => {
+    it('sends nothing at all while consent is denied', async () => {
+        start({ consent: 'denied' })
+        reachGoalUnsafe('while-denied')
+        await vi.advanceTimersByTimeAsync(500)
+
+        expect(mock.calls).toHaveLength(0)
+        expect(document.head.querySelector('script')).toBeNull()
+    })
+
+    // Replaying them would send, after the fact, events the visitor had not agreed to.
+    it('does not replay calls made before consent', async () => {
+        start({ consent: 'denied', pageviews: false })
+        reachGoalUnsafe('before-consent')
+        await vi.advanceTimersByTimeAsync(200)
+
+        grantConsent()
+        fireReady()
+        await vi.advanceTimersByTimeAsync(500)
+
+        expect(mock.forMethod('reachGoal')).toHaveLength(0)
+        expect(mock.forMethod('init')).toHaveLength(1)
+    })
+
+    it('counts the page the visitor agreed on', async () => {
+        start({ consent: 'denied' })
+        await vi.advanceTimersByTimeAsync(500)
+        expect(mock.forMethod('hit')).toHaveLength(0)
+
+        grantConsent()
+        fireReady()
+        await vi.advanceTimersByTimeAsync(500)
+
+        expect(mock.forMethod('hit')).toHaveLength(1)
+    })
+
+    it('keeps sending after consent was granted', async () => {
+        start({ consent: 'denied' })
+        grantConsent()
+        fireReady()
+        await vi.advanceTimersByTimeAsync(500)
+
+        reachGoalUnsafe('after-consent')
+        await vi.advanceTimersByTimeAsync(200)
+
+        expect(mock.forMethod('reachGoal')).toHaveLength(1)
     })
 })
 

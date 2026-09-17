@@ -148,10 +148,19 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
               ? createLogSink()
               : sendToTag
 
+    let consentGranted = (config.consent ?? 'granted') !== 'denied'
+
+    // While consent is pending the pipeline counts as ready so that nothing accumulates, and
+    // the sink drops: an event from before the visitor agreed must not go out afterwards.
+    const gated = (call: BufferedCall): void => {
+        if (!consentGranted) return
+        sink(call)
+    }
+
     const pipeline = createCallPipeline({
         beforeSend: config.beforeSend,
-        send: sink,
-        ready: resolved.mode === 'log',
+        send: gated,
+        ready: resolved.mode === 'log' || !consentGranted,
         onDropped: () =>
             warn(
                 'YM312',
@@ -263,7 +272,20 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
         counterId,
         send: event => pipeline.send(event),
         status: currentStatus,
-        grant: () => counter?.grant(),
+        grant: () => {
+            if (consentGranted) return
+            consentGranted = true
+            pipeline.setReady(resolved.mode === 'log')
+            counter?.grant()
+            // The page the visitor agreed on still counts; what happened before it does not.
+            if (
+                tracker !== null &&
+                pageviewOptions?.first !== false &&
+                typeof window !== 'undefined'
+            ) {
+                tracker.trackNow(window.location.href)
+            }
+        },
         revoke: () => {
             ;(globalThis as Record<string, unknown>)[
                 `disableYaCounter${String(counterId)}`
