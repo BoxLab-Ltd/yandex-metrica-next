@@ -26,6 +26,8 @@ export interface PageviewOptions extends NormalizeOptions {
     commitDebounce?: number
     searchDebounce?: number
     maxPerMinute?: number
+    /** How long an announced navigation may take to commit before it is reported as lost. */
+    commitTimeout?: number
     shouldTrack?: (context: PageviewContext) => boolean
     transformUrl?: (url: string, context: PageviewContext) => string | null
 }
@@ -52,6 +54,9 @@ export interface PageviewTrackerDeps {
     signals: HistorySignals
     send: (url: string, context: PageviewContext) => void
     onQuotaExceeded?: () => void
+    onStripped?: (names: string[]) => void
+    onTruncated?: () => void
+    onArmWithoutCommit?: () => void
     now?: () => number
     setTimeout?: (fn: () => void, ms: number) => number
     clearTimeout?: (handle: number) => void
@@ -61,10 +66,9 @@ const DEFAULTS = {
     commitDebounce: 100,
     searchDebounce: 500,
     maxPerMinute: 60,
+    // A dynamic page commits only after it renders, often seconds after the hook fired.
+    commitTimeout: 10_000,
 } as const
-
-// The spec's commitTimeout: a dynamic page commits only after it renders, often seconds later.
-const ARM_WINDOW_MS = 10_000
 
 type Armed = {
     url: string
@@ -88,6 +92,7 @@ export function createPageviewTracker(
     const commitDebounce = options.commitDebounce ?? DEFAULTS.commitDebounce
     const searchDebounce = options.searchDebounce ?? DEFAULTS.searchDebounce
     const maxPerMinute = options.maxPerMinute ?? DEFAULTS.maxPerMinute
+    const commitTimeout = options.commitTimeout ?? DEFAULTS.commitTimeout
     const navigationTypes = options.navigationTypes ?? [
         'push',
         'replace',
@@ -113,10 +118,24 @@ export function createPageviewTracker(
     let pendingUrl: string | null = null
     let commitsWithoutArm = 0
     let isFirst = true
+    // A counter, not a timestamp: an arm and the commit it belongs to can land in the same
+    // millisecond, and under fake timers they always do.
+    let commitCount = 0
+    const stallHandles = new Set<number>()
+
+    // Reported once each through the registry, but only from the paths that send: an arm is
+    // normalised too, and reporting there would blame the URL twice.
+    const normalize = (raw: string): ReturnType<typeof normalizeUrl> => {
+        const result = normalizeUrl(raw, options)
+        if (result.strippedParams.length > 0)
+            deps.onStripped?.(result.strippedParams)
+        if (result.truncated) deps.onTruncated?.()
+        return result
+    }
 
     const armFor = (url: string): Armed | null => {
         const key = triggerKey(url, 'url')
-        const cutoff = now() - ARM_WINDOW_MS
+        const cutoff = now() - commitTimeout
         for (let i = armLog.length - 1; i >= 0; i--) {
             const entry = armLog[i]
             if (entry === undefined || entry.at < cutoff) break
@@ -134,6 +153,7 @@ export function createPageviewTracker(
     const flush = (url: string, isBfcache: boolean): void => {
         pendingHandle = null
         pendingUrl = null
+        commitCount += 1
 
         const armed = armFor(url)
         const context: PageviewContext = {
@@ -170,7 +190,7 @@ export function createPageviewTracker(
     const commit = (rawUrl: string, isBfcache = false): void => {
         if (options.enabled === false) return
 
-        const normalized = normalizeUrl(rawUrl, options)
+        const normalized = normalize(rawUrl)
         if (normalized.url === null) return
 
         const key = triggerKey(normalized.url, trigger)
@@ -221,6 +241,8 @@ export function createPageviewTracker(
             if (pendingHandle !== null) cancel(pendingHandle)
             pendingHandle = null
             pendingUrl = null
+            for (const handle of stallHandles) cancel(handle)
+            stallHandles.clear()
         },
         arm(url, navigationType, transitionId = null) {
             // Armed urls arrive raw — onRouterTransitionStart reports push and replace
@@ -228,16 +250,25 @@ export function createPageviewTracker(
             // throws in the URL parser or never matches the commit it belongs to.
             const normalized = normalizeUrl(url, options)
             if (normalized.url === null) return
+            const armedAt = now()
             armLog.push({
                 url: normalized.url,
                 navigationType,
                 transitionId,
-                at: now(),
+                at: armedAt,
             })
             if (armLog.length > 20) armLog.shift()
+            // A superseded navigation leaves its arm behind by design, so the question is
+            // whether anything committed at all after it — not whether this one did.
+            const committed = commitCount
+            const handle = schedule(() => {
+                stallHandles.delete(handle)
+                if (commitCount === committed) deps.onArmWithoutCommit?.()
+            }, commitTimeout)
+            stallHandles.add(handle)
         },
         trackNow(url, navigationType = 'unknown') {
-            const normalized = normalizeUrl(url, options)
+            const normalized = normalize(url)
             if (normalized.url === null) return
             if (navigationType !== 'unknown') {
                 armLog.push({

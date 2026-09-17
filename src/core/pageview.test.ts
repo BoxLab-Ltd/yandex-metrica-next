@@ -3,6 +3,7 @@ import {
     createPageviewTracker,
     type PageviewContext,
     type PageviewOptions,
+    type PageviewTrackerDeps,
 } from './pageview.js'
 import { createHistorySignals, type HistorySignals } from './signals.js'
 
@@ -11,13 +12,17 @@ const ORIGIN = 'http://localhost:3000'
 let signals: HistorySignals
 let sent: { url: string; context: PageviewContext }[]
 
-const build = (options: PageviewOptions = {}) => {
+const build = (
+    options: PageviewOptions = {},
+    extra: Partial<PageviewTrackerDeps> = {},
+) => {
     sent = []
     const tracker = createPageviewTracker(
         { origin: ORIGIN, ...options },
         {
             signals,
             send: (url, context) => void sent.push({ url, context }),
+            ...extra,
         },
     )
     tracker.start()
@@ -227,6 +232,54 @@ describe('pageview tracker — arm enrichment', () => {
         settle()
 
         expect(sent[1]?.context.navigationType).toBe('unknown')
+    })
+})
+
+describe('pageview tracker — reporting', () => {
+    it('names the parameters it removed, so the loss is not silent', () => {
+        const stripped: string[][] = []
+        const tracker = build({}, { onStripped: names => stripped.push(names) })
+
+        tracker.trackNow(`${ORIGIN}/a?access_token=secret&utm_source=mail`)
+
+        expect(stripped).toEqual([['access_token']])
+        expect(sent[0]?.url).toBe(`${ORIGIN}/a?utm_source=mail`)
+    })
+
+    it('reports a url it had to truncate', () => {
+        const truncated = vi.fn()
+        const tracker = build({ maxLength: 40 }, { onTruncated: truncated })
+
+        tracker.trackNow(`${ORIGIN}/a?q=${'x'.repeat(100)}`)
+
+        expect(truncated).toHaveBeenCalled()
+    })
+
+    it('reports a navigation that never committed', () => {
+        const stalled = vi.fn()
+        const tracker = build({}, { onArmWithoutCommit: stalled })
+        tracker.trackNow(`${ORIGIN}/a`)
+
+        tracker.arm('/b', 'push')
+        vi.advanceTimersByTime(10_001)
+
+        expect(stalled).toHaveBeenCalledTimes(1)
+    })
+
+    // An interrupted navigation leaves an arm behind on purpose; only a page that never
+    // committed at all is worth a word.
+    it('stays quiet when a later navigation committed instead', () => {
+        const stalled = vi.fn()
+        const tracker = build({}, { onArmWithoutCommit: stalled })
+        tracker.trackNow(`${ORIGIN}/a`)
+
+        tracker.arm('/b', 'push')
+        tracker.arm('/c', 'push')
+        navigate('/c')
+        settle()
+        vi.advanceTimersByTime(10_001)
+
+        expect(stalled).not.toHaveBeenCalled()
     })
 })
 

@@ -239,6 +239,10 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
                       })
                   },
                   onQuotaExceeded: () => warn('YM312'),
+                  onStripped: names =>
+                      warn('YM401', `Removed: ${names.join(', ')}.`),
+                  onTruncated: () => warn('YM402'),
+                  onArmWithoutCommit: () => warn('YM303'),
               })
 
     if (tracker !== null) {

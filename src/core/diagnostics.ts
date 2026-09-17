@@ -82,13 +82,13 @@ export function report(
             level: 'error',
             text: 'The tag did not initialise within initTimeout. Likely an ad blocker, a CSP rule, or the network.',
         },
-        YM202: {
-            level: 'error',
-            text: 'A Content Security Policy blocked a Metrica resource. Add the reported directive.',
-        },
         YM203: {
             level: 'warn',
             text: 'The same counter was initialised twice. Keep a single init per counter.',
+        },
+        YM202: {
+            level: 'error',
+            text: 'A Content Security Policy blocked a Metrica resource. Add the reported directive.',
         },
         YM301: {
             level: 'error',
@@ -100,7 +100,7 @@ export function report(
         },
         YM303: {
             level: 'warn',
-            text: 'A navigation was announced but never committed within commitTimeout, so no pageview was sent.',
+            text: 'A navigation was announced but nothing committed within commitTimeout, so no pageview was sent.',
         },
         YM304: {
             level: 'warn',
