@@ -8,7 +8,6 @@ import {
 Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN })
 
 register({
-    counterId: Number(process.env.NEXT_PUBLIC_YANDEX_METRICA_ID),
     devCounterId:
         Number(process.env.NEXT_PUBLIC_YANDEX_METRICA_DEV_ID) || undefined,
     webvisor: true,

@@ -20,9 +20,22 @@ export interface ResolvedModeResult {
     foreignYm: boolean
 }
 
-declare const process: { env: { NODE_ENV?: string } }
+declare const process: {
+    env: { NODE_ENV?: string; NEXT_PUBLIC_YANDEX_METRICA_ID?: string }
+}
 
 const DEV = process.env.NODE_ENV !== 'production'
+
+const envCounterId = (): CounterId | undefined => {
+    try {
+        // Written as the exact member expression bundlers substitute; the catch covers a
+        // runtime that has no process at all, where nothing replaced it either.
+        const raw = Number(process.env.NEXT_PUBLIC_YANDEX_METRICA_ID)
+        return Number.isInteger(raw) && raw > 0 ? raw : undefined
+    } catch {
+        return undefined
+    }
+}
 
 /**
  * `auto` sends in production, and outside it either sends to a dedicated dev counter or
@@ -32,14 +45,14 @@ const DEV = process.env.NODE_ENV !== 'production'
 export function resolveMode(input: ModeInput): ResolvedModeResult {
     const requested = input.mode ?? 'auto'
     const production = !DEV
+    const counterId = input.counterId ?? envCounterId()
 
     if (requested === 'off') {
         return { mode: 'off', counterId: undefined, foreignYm: false }
     }
 
     if (requested === 'auto') {
-        if (production)
-            return { mode: 'on', counterId: input.counterId, foreignYm: false }
+        if (production) return { mode: 'on', counterId, foreignYm: false }
         if (input.devCounterId !== undefined) {
             return {
                 mode: 'on',
@@ -47,28 +60,22 @@ export function resolveMode(input: ModeInput): ResolvedModeResult {
                 foreignYm: false,
             }
         }
-        return {
-            mode: 'log',
-            counterId: input.counterId,
-            foreignYm: hasForeignYm(),
-        }
+        return { mode: 'log', counterId, foreignYm: hasForeignYm() }
     }
 
     if (requested === 'log') {
         return {
             mode: 'log',
             counterId: production
-                ? input.counterId
-                : (input.devCounterId ?? input.counterId),
+                ? counterId
+                : (input.devCounterId ?? counterId),
             foreignYm: hasForeignYm(),
         }
     }
 
     return {
         mode: 'on',
-        counterId: production
-            ? input.counterId
-            : (input.devCounterId ?? input.counterId),
+        counterId: production ? counterId : (input.devCounterId ?? counterId),
         foreignYm: false,
     }
 }
