@@ -1,0 +1,50 @@
+name: Bug
+description: The package throws, warns wrongly, or does not do what the docs say
+labels: [bug]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Before filing, run through [troubleshooting.md](https://github.com/BoxLab-Ltd/yandex-metrica-next/blob/main/docs/troubleshooting.md) — most "nothing arrives" reports are a counter setting or an ad blocker.
+              Never paste a production counter id you do not want public.
+    - type: textarea
+      id: what
+      attributes:
+          label: What happened, and what you expected
+      validations:
+          required: true
+    - type: textarea
+      id: repro
+      attributes:
+          label: Minimal reproduction
+          description: A repository or the smallest config and steps that show it.
+      validations:
+          required: true
+    - type: textarea
+      id: status
+      attributes:
+          label: getStatus() output
+          description: Run `getStatus()` from `@boxlab/yandex-metrica-next` in the browser console where it happens.
+          render: json
+    - type: input
+      id: diagnostics
+      attributes:
+          label: Diagnostic codes printed in development
+          placeholder: YM201, YM304
+    - type: dropdown
+      id: path
+      attributes:
+          label: Installation path
+          options:
+              - instrumentation-client.ts
+              - <YandexMetrica /> component
+              - <YandexMetricaPages /> (Pages Router)
+      validations:
+          required: true
+    - type: input
+      id: versions
+      attributes:
+          label: Versions
+          placeholder: package 0.1.0, next 16.4.1, react 19.2.8, Turbopack
+      validations:
+          required: true

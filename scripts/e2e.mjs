@@ -117,6 +117,14 @@ const fail = message => {
     process.exit(1)
 }
 
+// A dist-tag must become a version here: bundler flags depend on the major.
+const resolveNext = spec =>
+    /^\d/.test(spec)
+        ? spec
+        : execFileSync('npm', ['view', `next@${spec}`, 'version'], {
+              encoding: 'utf8',
+          }).trim()
+
 const nextMajor = cell => Number(cell.next.split('.')[0])
 
 const bundlerFlags = cell => {
@@ -235,6 +243,7 @@ const { values, positionals } = parseArgs({
     options: {
         env: { type: 'string' },
         tarball: { type: 'string' },
+        next: { type: 'string' },
         'skip-install': { type: 'boolean', default: false },
     },
 })
@@ -251,8 +260,11 @@ if (command === 'list') {
     console.log(JSON.stringify(Object.keys(CELLS)))
 } else if (command === 'run') {
     const [id, ...extra] = rest
-    const cell = CELLS[id]
-    if (!cell) fail(`unknown cell "${id}"; run "node scripts/e2e.mjs list"`)
+    const pinned = CELLS[id]
+    if (!pinned) fail(`unknown cell "${id}"; run "node scripts/e2e.mjs list"`)
+    const cell = values.next
+        ? { ...pinned, next: resolveNext(values.next) }
+        : pinned
     const envs = values.env ? [values.env] : cell.envs
     const tarball = values.tarball ?? pack()
     const dir = prepare(id, cell, tarball, {
@@ -264,6 +276,6 @@ if (command === 'list') {
     }
 } else {
     fail(
-        'usage: node scripts/e2e.mjs list | matrix | run <cell> [--env prod|dev] [--tarball <tgz>] [--skip-install] [-- <playwright args>]',
+        'usage: node scripts/e2e.mjs list | matrix | run <cell> [--env prod|dev] [--next <version|tag>] [--tarball <tgz>] [--skip-install] [-- <playwright args>]',
     )
 }

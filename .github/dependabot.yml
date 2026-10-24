@@ -1,0 +1,20 @@
+version: 2
+updates:
+    - package-ecosystem: bun
+      directory: /
+      schedule:
+          interval: weekly
+      # A freshly published version is where a hijacked release lives; five days lets the registry catch it.
+      cooldown:
+          default-days: 5
+      groups:
+          dev-dependencies:
+              dependency-type: development
+              update-types: [minor, patch]
+
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: weekly
+      cooldown:
+          default-days: 5

@@ -1,0 +1,44 @@
+name: Nightly
+
+# A Next release that breaks pageviews should surface here the next morning, not in an issue.
+
+on:
+    schedule:
+        - cron: '17 3 * * *'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    e2e-next-latest:
+        name: e2e (${{ matrix.cell }} on next@latest)
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        strategy:
+            fail-fast: false
+            matrix:
+                cell:
+                    - next16-turbopack-client
+                    - next16-webpack-component
+                    - next16-turbopack-pages
+        steps:
+            - uses: actions/checkout@v5
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+              with:
+                  bun-version: latest
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22.22.2
+            - run: bun install --frozen-lockfile
+            - id: playwright
+              run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+            - run: bunx playwright install --with-deps chromium
+            - name: run cell
+              env:
+                  CELL: ${{ matrix.cell }}
+              run: node scripts/e2e.mjs run "$CELL" --next latest

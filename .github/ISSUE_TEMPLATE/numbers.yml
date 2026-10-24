@@ -1,0 +1,36 @@
+name: The numbers look wrong
+description: Pageviews or goals in Metrica reports differ from what you expect
+labels: [numbers]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Read "The numbers are wrong" in [troubleshooting.md](https://github.com/BoxLab-Ltd/yandex-metrica-next/blob/main/docs/troubleshooting.md) first. Reports aggregate with a delay, and robot filtering or "do not count my visits" hide real hits.
+    - type: textarea
+      id: expected
+      attributes:
+          label: What you expected and what the report shows
+          description: Name the report, the date range and the numbers.
+      validations:
+          required: true
+    - type: textarea
+      id: scenario
+      attributes:
+          label: The navigation that produces it
+          description: For example "open /a, click to /b, press back" — and how many hits you see leave in DevTools.
+      validations:
+          required: true
+    - type: textarea
+      id: config
+      attributes:
+          label: Your register() or <YandexMetrica /> configuration
+          render: ts
+      validations:
+          required: true
+    - type: input
+      id: versions
+      attributes:
+          label: Versions
+          placeholder: package 0.1.0, next 16.4.1, react 19.2.8, App Router
+      validations:
+          required: true

@@ -1,0 +1,19 @@
+name: Feature request
+description: Something the package should do and does not
+labels: [enhancement]
+body:
+    - type: textarea
+      id: problem
+      attributes:
+          label: The problem
+          description: What you are trying to measure or prevent, before any proposed API.
+      validations:
+          required: true
+    - type: textarea
+      id: proposal
+      attributes:
+          label: What you would like
+    - type: textarea
+      id: workaround
+      attributes:
+          label: What you do today instead
