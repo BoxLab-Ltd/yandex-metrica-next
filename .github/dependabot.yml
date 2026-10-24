@@ -11,6 +11,10 @@ updates:
           dev-dependencies:
               dependency-type: development
               update-types: [minor, patch]
+      ignore:
+          # Types follow the Node the toolchain runs on (22), not the newest release.
+          - dependency-name: '@types/node'
+            update-types: ['version-update:semver-major']
 
     - package-ecosystem: github-actions
       directory: /
