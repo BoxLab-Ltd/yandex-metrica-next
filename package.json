@@ -171,7 +171,7 @@
         "@types/react-18": "npm:@types/react@^18.3.31",
         "@types/react-dom": "^19.3.0",
         "@types/react-dom-18": "npm:@types/react-dom@^18.3.7",
-        "@vitest/coverage-v8": "^4.1.11",
+        "@vitest/coverage-v8": "^5.0.5",
         "eslint": "^10.13.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-react-hooks": "^7.1.1",
@@ -186,7 +186,7 @@
         "tsdown": "^0.23.1",
         "typescript": "6.0.3",
         "typescript-eslint": "^8.71.2",
-        "vitest": "^4.1.11",
+        "vitest": "^5.0.5",
         "yandex-metrica-watch": "1.452.0"
     }
 }
