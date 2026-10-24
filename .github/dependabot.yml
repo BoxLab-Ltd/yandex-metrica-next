@@ -15,6 +15,9 @@ updates:
           # Types follow the Node the toolchain runs on (22), not the newest release.
           - dependency-name: '@types/node'
             update-types: ['version-update:semver-major']
+          # typescript-eslint 8 refuses TS 7; lift this once it supports it.
+          - dependency-name: typescript
+            update-types: ['version-update:semver-major']
 
     - package-ecosystem: github-actions
       directory: /
