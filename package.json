@@ -1,6 +1,6 @@
 {
     "name": "@boxlab/yandex-metrica-next",
-    "version": "0.0.0",
+    "version": "0.1.0",
     "description": "Yandex Metrica (Яндекс.Метрика / Yandex Metrika) for Next.js — App Router & Pages Router, correct SPA pageviews, typed goals, zero dependencies. Unofficial.",
     "license": "MIT",
     "author": "BoxLab Ltd",
