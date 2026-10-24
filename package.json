@@ -171,7 +171,7 @@
         "@types/react-18": "npm:@types/react@^18.3.31",
         "@types/react-dom": "^19.2.4",
         "@types/react-dom-18": "npm:@types/react-dom@^18.3.7",
-        "@vitest/coverage-v8": "^4.1.11",
+        "@vitest/coverage-v8": "^5.0.5",
         "eslint": "^10.8.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-react-hooks": "^7.1.1",
