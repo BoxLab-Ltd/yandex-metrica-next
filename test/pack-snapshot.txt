@@ -1,3 +1,4 @@
+AGENTS.md
 LICENSE
 README.md
 dist/_virtual/_rolldown/runtime.cjs

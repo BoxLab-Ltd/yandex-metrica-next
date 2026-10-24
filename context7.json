@@ -1,0 +1,16 @@
+{
+    "projectTitle": "@boxlab/yandex-metrica-next",
+    "description": "Yandex Metrica for Next.js App Router and Pages Router: correct SPA pageviews, typed goals, consent gate, CSP helpers and a test mock. Unofficial.",
+    "folders": ["docs"],
+    "excludeFolders": [],
+    "excludeFiles": [],
+    "rules": [
+        "Supports Next.js 15 and 16 with React 18.2 or 19; Next 14 is not supported.",
+        "Use exactly one setup: instrumentation-client.ts with register() from '/client' (Next 15.3+), <YandexMetrica /> from '/react' as a sibling of {children} in the root layout, or <YandexMetricaPages /> from '/pages' in _app.tsx.",
+        "Pageviews are automatic; never call hit() on route changes.",
+        "The counter id defaults to NEXT_PUBLIC_YANDEX_METRICA_ID; nothing is sent in development unless devCounterId or mode: 'on' is set.",
+        "Type goal names by augmenting the MetricaGoalRegistry interface of '@boxlab/yandex-metrica-next'.",
+        "When Sentry already exports onRouterTransitionStart, combine both with composeRouterTransitionStart.",
+        "In tests use installYmMock() and resetMetricaRegistry() from '/testing' and register with mode: 'on'."
+    ]
+}
