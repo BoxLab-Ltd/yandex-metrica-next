@@ -114,18 +114,19 @@ metadata on a soft navigation.
 ## In production everything is silent
 
 That is the contract: the whole diagnostic table is dropped from production bundles, verified
-against real Next builds in the e2e matrix. Two ways to see what is happening anyway:
+against real Next builds in the e2e matrix, and `onDiagnostic` goes with it. What stays:
 
 ```ts
-register({
-    counterId: 12345678,
-    onDiagnostic: diagnostic => reportToYourLogger(diagnostic),
-})
+import { getStatus } from '@boxlab/yandex-metrica-next'
+
+const { state, reason } = getStatus()
+if (state === 'blocked') reportToYourLogger({ state, reason })
 ```
 
-`onDiagnostic` fires wherever the diagnostic would have been printed, and `getStatus()` works in
-production unchanged. For the vendor's own view, `debug: true` sets `_ym_debug` before the tag
-loads and turns on its console output.
+`getStatus()` works in production unchanged. To see a production problem with the full
+diagnostics, reproduce it under `next dev` with `mode: 'on'`: the messages are back, and the
+package sends for real — to `devCounterId` when one is set. For the vendor's own view,
+`debug: true` sets `_ym_debug` before the tag loads and turns on its console output.
 
 ## Reporting a bug
 

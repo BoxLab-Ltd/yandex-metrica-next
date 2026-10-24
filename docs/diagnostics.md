@@ -12,8 +12,9 @@ Three properties hold for all of them:
   real Next build and asserts none of this text ships.
 - **Once per page load.** A repeated warning trains people to ignore the console, so each code
   prints at most once; the registry remembers which ones were already shown.
-- **Yours to route.** `devWarnings: false` silences them; `onDiagnostic` receives every
-  diagnostic as `{ code, level, message, docs }` — send them to your own logger if you prefer.
+- **Yours to route.** `onDiagnostic` receives each diagnostic as `{ code, level, message, docs }`
+  before it is printed; `devWarnings: false` silences both. Neither exists in production — there
+  the channel is `getStatus()`.
 
 | Code            | Level | Meaning                                        |
 | --------------- | ----- | ---------------------------------------------- |

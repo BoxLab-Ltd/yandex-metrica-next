@@ -126,8 +126,9 @@ a `<meta>` tag is ignored by browsers.
 
 The package listens for `securitypolicyviolation` and reports the violations that belong to
 Metrica as [YM202](./diagnostics.md#ym202), naming the blocked URI and the directive that refused
-it. In production that listener is still attached, but the message is stripped — use
-`onDiagnostic` if you want the same information from a production build.
+it. Like every diagnostic it is development-only: a production build carries neither the message
+nor the `onDiagnostic` call. To collect violations from production, use the policy's own
+`report-to` endpoint — it sees every directive, not only Metrica's.
 
 Roll a new policy out with `Content-Security-Policy-Report-Only` first. A report-only header
 produces the same violation events without breaking the page, so YM202 tells you what is missing
