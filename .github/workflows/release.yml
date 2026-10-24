@@ -44,11 +44,13 @@ jobs:
             - run: bun run build
             - run: bun run test
             - run: bun run lint:pkg
+            - run: bun run lint:invariants
             - run: bun run test:types
             - name: attw
               run: |
                   bun pm pack
                   bunx attw ./*.tgz
+            - run: bun run pack:snapshot ./*.tgz
 
             # Node 22 bundles npm 10.x, which cannot authenticate by OIDC at all.
             # Trusted Publishing needs >= 11.5.1; pinned rather than @latest because this

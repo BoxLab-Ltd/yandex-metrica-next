@@ -31,10 +31,12 @@ jobs:
             - run: bun run size
             - run: bun run test
             - run: bun run lint:pkg
+            - run: bun run lint:invariants
             - name: attw
               run: |
                   bun pm pack
                   bunx attw ./*.tgz
+            - run: bun run pack:snapshot ./*.tgz
             - run: bun run test:types
             - uses: actions/upload-artifact@v4
               with:
