@@ -38,7 +38,7 @@ jobs:
                   bunx attw ./*.tgz
             - run: bun run pack:snapshot ./*.tgz
             - run: bun run test:types
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               with:
                   name: tarball
                   path: ./*.tgz
@@ -118,7 +118,7 @@ jobs:
               env:
                   CELL: ${{ matrix.cell }}
               run: node scripts/e2e.mjs run "$CELL" --tarball "$(ls "$GITHUB_WORKSPACE"/*.tgz)"
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               if: failure()
               with:
                   name: playwright-${{ matrix.cell }}
