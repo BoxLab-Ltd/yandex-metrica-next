@@ -248,8 +248,10 @@ What CI proves on every push, each cell a production build of a real app driven 
 | 16.4 | 19    | webpack   | component                                                                              |
 | 16.4 | 19    | Turbopack | Pages Router                                                                           |
 | 15.5 | 19    | webpack   | component                                                                              |
-| 15.5 | 18    | webpack   | component, Pages Router                                                                |
+| 15.5 | 18    | webpack   | Pages Router                                                                           |
 
+The App Router always runs on the React that Next bundles, so with React 18 installed only the Pages
+Router actually executes on it; the matrix still builds an App Router app against React 18 types.
 A nightly run repeats the Next 16 cells against the latest Next release.
 
 ## Documentation
