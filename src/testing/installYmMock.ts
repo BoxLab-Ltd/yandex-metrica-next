@@ -11,7 +11,7 @@ export interface YmMock {
     readonly calls: YmCall[]
     /** Calls still sitting in the stub queue because the tag has not loaded yet. */
     readonly queued: YmCall[]
-    /** Simulates tag.js finishing load: drains the queue into `calls`. */
+    /** Simulates tag.js finishing load: drains the queue and announces every initialised counter. */
     load(): void
     /** Calls for one method, e.g. `hits('hit')`. */
     forMethod(method: string): YmCall[]
@@ -30,6 +30,14 @@ const toCall = (args: unknown[]): YmCall => ({
     args: args.slice(2),
 })
 
+// The package buffers every call until this event, exactly as it does for the real tag.
+const announce = (call: YmCall): void => {
+    if (call.method !== 'init' || typeof document === 'undefined') return
+    document.dispatchEvent(
+        new Event(`yacounter${String(call.counterId)}inited`),
+    )
+}
+
 /**
  * Offline tests assert on this spy rather than on the network: intercepting
  * `mc.yandex.*` puts the real tag into a degraded state after the first hit,
@@ -43,8 +51,14 @@ export function installYmMock(options: { loaded?: boolean } = {}): YmMock {
 
     const stub: YmStub = (...args: unknown[]) => {
         const call = toCall(args)
-        if (loaded) calls.push(call)
-        else pending.push(call)
+        if (!loaded) {
+            pending.push(call)
+            return
+        }
+        calls.push(call)
+        // The real tag initialises asynchronously; announcing inside the init call would
+        // run listeners its caller has not finished attaching.
+        queueMicrotask(() => announce(call))
     }
     stub.a = []
     stub.l = Date.now()
@@ -55,8 +69,9 @@ export function installYmMock(options: { loaded?: boolean } = {}): YmMock {
         queued: pending,
         load() {
             loaded = true
-            calls.push(...pending)
-            pending.length = 0
+            const drained = pending.splice(0)
+            calls.push(...drained)
+            for (const call of drained) announce(call)
         },
         forMethod(method: string) {
             return calls.filter(c => c.method === method)
