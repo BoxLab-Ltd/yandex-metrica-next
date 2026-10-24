@@ -31,7 +31,7 @@ const TYPES = {
 export const CELLS = {
     'next16-turbopack-client': {
         app: 'app-router',
-        next: '16.3.5',
+        next: '16.4.1',
         react: '19.3.0',
         bundler: 'turbopack',
         variant: 'client',
@@ -39,7 +39,7 @@ export const CELLS = {
     },
     'next16-webpack-component': {
         app: 'app-router',
-        next: '16.3.5',
+        next: '16.4.1',
         react: '19.3.0',
         bundler: 'webpack',
         variant: 'component',
@@ -47,7 +47,7 @@ export const CELLS = {
     },
     'next16-turbopack-sentry': {
         app: 'app-router',
-        next: '16.3.5',
+        next: '16.4.1',
         react: '19.3.0',
         bundler: 'turbopack',
         variant: 'sentry',
@@ -55,7 +55,7 @@ export const CELLS = {
     },
     'next16-turbopack-cjs-config': {
         app: 'app-router',
-        next: '16.3.5',
+        next: '16.4.1',
         react: '19.3.0',
         bundler: 'turbopack',
         variant: 'cjs-config',
@@ -63,7 +63,7 @@ export const CELLS = {
     },
     'next16-turbopack-client-basepath': {
         app: 'app-router',
-        next: '16.3.5',
+        next: '16.4.1',
         react: '19.3.0',
         bundler: 'turbopack',
         variant: 'client',
@@ -72,7 +72,7 @@ export const CELLS = {
     },
     'next16-turbopack-pages': {
         app: 'pages-router',
-        next: '16.3.5',
+        next: '16.4.1',
         react: '19.3.0',
         bundler: 'turbopack',
         variant: 'default',
@@ -80,7 +80,7 @@ export const CELLS = {
     },
     'next15-webpack-component': {
         app: 'app-router',
-        next: '15.5.25',
+        next: '15.5.28',
         react: '19.2.8',
         bundler: 'webpack',
         variant: 'component',
@@ -88,7 +88,7 @@ export const CELLS = {
     },
     'next15-webpack-component-react18': {
         app: 'app-router',
-        next: '15.5.25',
+        next: '15.5.28',
         react: '18.3.1',
         bundler: 'webpack',
         variant: 'component',
@@ -96,7 +96,7 @@ export const CELLS = {
     },
     'next15-webpack-pages-react18': {
         app: 'pages-router',
-        next: '15.5.25',
+        next: '15.5.28',
         react: '18.3.1',
         bundler: 'webpack',
         variant: 'default',
