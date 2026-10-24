@@ -15,7 +15,7 @@ jobs:
     analyze:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7.0.1
             - uses: github/codeql-action/init@v3
               with:
                   # `actions` covers the workflow files themselves — that is the analysis
