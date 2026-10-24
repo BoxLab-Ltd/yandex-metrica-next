@@ -54,8 +54,8 @@ jobs:
 
             # Node 22 bundles npm 10.x, which cannot authenticate by OIDC at all.
             # Trusted Publishing needs >= 11.5.1; pinned rather than @latest because this
-            # is the one workflow holding id-token: write.
-            - run: npm install -g npm@11.18.0
+            # is the one workflow holding id-token: write. Run through npx: `npm install -g npm`
+            # on top of the bundled 10.9 dies with "Cannot find module 'promise-retry'".
             # Trusted Publishing (OIDC) generates provenance on its own; no token, no
             # --provenance. The version check keeps a re-run safe: the registry refuses to
             # overwrite a version, so a release that failed after this step could never be
@@ -66,5 +66,5 @@ jobs:
                   if npm view "@boxlab/yandex-metrica-next@${VERSION}" version >/dev/null 2>&1; then
                     echo "@boxlab/yandex-metrica-next@${VERSION} is already published — skipping"
                   else
-                    npm publish --ignore-scripts
+                    npx --yes npm@11.18.0 publish --ignore-scripts
                   fi
