@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+    - name: Question
+      url: https://github.com/BoxLab-Ltd/yandex-metrica-next/discussions/categories/q-a
+      about: How to set something up, or whether the package fits your case.
     - name: Security vulnerability
       url: https://github.com/BoxLab-Ltd/yandex-metrica-next/security/advisories/new
       about: Report privately, never in a public issue.
