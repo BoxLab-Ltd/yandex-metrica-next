@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, type JSX } from 'react'
-import Router from 'next/router'
+// next has no exports map, so Node's ESM resolver needs the extension spelled out.
+import Router from 'next/router.js'
 import { armNavigation } from '../core/api.js'
 import {
     YandexMetrica,
