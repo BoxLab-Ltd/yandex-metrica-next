@@ -16,10 +16,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7.0.1
-            - uses: github/codeql-action/init@v3
+            - uses: github/codeql-action/init@v4
               with:
                   # `actions` covers the workflow files themselves — that is the analysis
                   # that caught an unpinned third-party action here, and dropping it would
                   # leave the release path unscanned.
                   languages: javascript-typescript, actions
-            - uses: github/codeql-action/analyze@v3
+            - uses: github/codeql-action/analyze@v4
