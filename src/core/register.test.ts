@@ -105,6 +105,25 @@ describe('register — guards', () => {
         expect(getRegistry().trackerOwner).toBe(owner)
     })
 
+    it('gives the duplicate a handle that reads the original registration', async () => {
+        const original = start()
+        fireReady()
+        await vi.advanceTimersByTimeAsync(500)
+
+        const duplicate = start()
+
+        expect(duplicate.status()).toEqual(original.status())
+        expect(duplicate.status()).toMatchObject({
+            state: 'ready',
+            pageviewsSent: 1,
+        })
+        duplicate.dispose()
+        expect(getStatus().state).toBe('ready')
+
+        original.dispose()
+        expect(duplicate.status().state).toBe('disabled')
+    })
+
     it('reports YM103 when a second copy of the package is loaded', () => {
         const onDiagnostic = vi.fn()
         getRegistry().copies.set('0.0.0-duplicate', 1)
