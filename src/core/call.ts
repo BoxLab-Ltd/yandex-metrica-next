@@ -13,13 +13,13 @@ export interface CallPipelineOptions {
 }
 
 export interface CallPipeline {
-    /** Returns false when beforeSend cancelled the event. */
-    send(event: MetricaEvent): boolean
+    /** Returns false when beforeSend cancelled the event; `onSent` becomes the hit callback after it. */
+    send(event: MetricaEvent, onSent?: () => void): boolean
     setReady(ready: boolean): void
     readonly buffered: number
 }
 
-const toCall = (event: MetricaEvent): BufferedCall => {
+const toCall = (event: MetricaEvent, onSent?: () => void): BufferedCall => {
     switch (event.type) {
         case 'pageview':
             return {
@@ -31,6 +31,7 @@ const toCall = (event: MetricaEvent): BufferedCall => {
                         title: event.title,
                         referer: event.referer,
                         params: event.params,
+                        ...(onSent === undefined ? {} : { callback: onSent }),
                     },
                 ],
             }
@@ -103,12 +104,12 @@ export function createCallPipeline(options: CallPipelineOptions): CallPipeline {
     }
 
     return {
-        send(event) {
+        send(event, onSent) {
             const transformed = options.beforeSend
                 ? options.beforeSend(event)
                 : event
             if (transformed === null) return false
-            emit(toCall(transformed))
+            emit(toCall(transformed, onSent))
             return true
         },
         setReady(next) {

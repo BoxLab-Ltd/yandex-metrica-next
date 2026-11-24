@@ -10,7 +10,8 @@ below has a specific cause.
 import { getStatus } from '@boxlab/yandex-metrica-next'
 
 console.log(getStatus())
-// { state: 'ready', counterId: 12345678, reason: undefined, pageviewsSent: 3, bufferedCalls: 0 }
+// { state: 'ready', counterId: 12345678, reason: undefined, pageviewsSent: 3, bufferedCalls: 0,
+//   addressCleaning: false, addressCleanups: 0 }
 ```
 
 `getStatus()` works everywhere, including on the server and with the tag blocked — it is the

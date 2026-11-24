@@ -34,6 +34,8 @@ https://github.com/BoxLab-Ltd/yandex-metrica-next/tree/main/docs
   state.
 - Do not call `hit()` on route changes: pageviews are automatic. Calling it manually doubles them.
 - Do not pass `defer` or `triggerEvent` in `initParameters`; the package owns both.
+- To remove `utm_*` from the address bar after the pageview, use `cleanAddressParams: 'utm'`.
+  Never call `history.replaceState` by hand for it; that races the hit and loses the tags.
 - Nothing is sent in `next dev` by default — calls are logged. That is expected, not a bug. Use
   `devCounterId` to send development traffic to a separate counter.
 - Consent: `consent: 'denied'` plus `grantConsent()` from the root entry when the visitor agrees.

@@ -47,6 +47,8 @@ export interface PageviewTracker {
     ): void
     /** Commits without waiting for a history write; used for the first pageview. */
     trackNow(url: string, navigationType?: NavigationType): void
+    /** The page's address changed in place; a later commit to it is not a navigation. */
+    acknowledge(url: string): void
     readonly commitsWithoutArm: number
 }
 
@@ -280,6 +282,13 @@ export function createPageviewTracker(
             }
             lastTriggerKey = triggerKey(normalized.url, trigger)
             flush(normalized.url, false)
+        },
+        acknowledge(url) {
+            // A commit in flight is a navigation away; its key must win.
+            if (pendingHandle !== null) return
+            const normalized = normalizeUrl(url, options)
+            if (normalized.url !== null)
+                lastTriggerKey = triggerKey(normalized.url, trigger)
         },
         get commitsWithoutArm() {
             return commitsWithoutArm

@@ -81,6 +81,8 @@ export type { BlockReason, ConsentState, CounterStatus } from './core/init.js'
 
 export type { MetricaMode } from './core/mode.js'
 
+export type { CleanAddressParams } from './core/address.js'
+
 export type {
     Diagnostic,
     DiagnosticCode,

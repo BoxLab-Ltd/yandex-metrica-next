@@ -17,8 +17,8 @@ afterEach(() => {
 })
 
 describe('diagnostics', () => {
-    it('ships exactly the thirteen v0.1 codes', () => {
-        expect(diagnosticCodes).toHaveLength(13)
+    it('ships exactly the fifteen v0.2 codes', () => {
+        expect(diagnosticCodes).toHaveLength(15)
         expect(diagnosticCodes).not.toContain('YM501')
     })
 

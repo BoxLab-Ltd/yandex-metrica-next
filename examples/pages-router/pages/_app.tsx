@@ -15,6 +15,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 clickmap
                 trackLinks
                 accurateTrackBounce
+                cleanAddressParams='utm'
             />
             <Nav />
             <main>

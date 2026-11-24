@@ -7,6 +7,7 @@ register({
     clickmap: true,
     trackLinks: true,
     accurateTrackBounce: true,
+    cleanAddressParams: 'utm',
 })
 
 export { onRouterTransitionStart } from '@boxlab/yandex-metrica-next/client'

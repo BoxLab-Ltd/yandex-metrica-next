@@ -18,7 +18,7 @@ builds.
   separate dev counter — your reports never fill with `localhost`.
 - **A consent gate that means it.** With consent denied the tag is not loaded at all.
 - **CSP without a nonce.** No inline script; `metricaCsp()` returns the directives to merge.
-- **Silent failures made loud.** Thirteen coded diagnostics in development, `getStatus()`
+- **Silent failures made loud.** Fifteen coded diagnostics in development, `getStatus()`
   everywhere.
 - Zero runtime dependencies, ESM and CommonJS, about 5 kB brotlied, published with npm
   provenance.
@@ -191,6 +191,18 @@ While consent is denied the tag script is not inserted and nothing is sent or qu
 `beforeSend` can rewrite or drop any event — every call goes through it. Details, including what
 the package does **not** cover: [consent-and-pii.md](./docs/consent-and-pii.md).
 
+## Campaign tags in the address bar
+
+```ts
+register({ counterId: 12345678, cleanAddressParams: 'utm' })
+```
+
+Once the landing pageview has been sent with its `utm_*` tags, they are removed from the address
+bar, so a link the visitor copies and sends on is not credited to the same campaign. The pageview
+itself still carries the tags, and nothing is sent twice. It is off by default and also takes a
+list, such as `['utm_*', 'yclid']`. Details:
+[pageviews.md](./docs/pageviews.md#4-cleaning-the-address-bar).
+
 ## Content Security Policy
 
 ```ts
@@ -214,6 +226,7 @@ Merge the lists into your existing directives — a directive repeated in one he
 | `webvisor`, `clickmap`, `trackLinks`, `accurateTrackBounce` | tag defaults   | the usual tag features                                                |
 | `ecommerce`                                                 | —              | `true` or the name of your `dataLayer` array                          |
 | `pageviews`                                                 | `{}`           | `false` disables them; options in [pageviews.md](./docs/pageviews.md) |
+| `cleanAddressParams`                                        | —              | `'utm'` or a list: removed from the address bar after the pageview    |
 | `title`                                                     | `'settle'`     | wait for the new `<title>`; `'immediate'` or `false`                  |
 | `beforeSend`                                                | —              | rewrite or drop any outgoing event (`register()` only)                |
 | `initParameters`                                            | —              | other `init` parameters; `defer` and `triggerEvent` are the package's |

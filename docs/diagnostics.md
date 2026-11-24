@@ -22,6 +22,7 @@ Three properties hold for all of them:
 | [YM102](#ym102) | error | The counter id is not a counter id             |
 | [YM103](#ym103) | warn  | Two copies of the package                      |
 | [YM104](#ym104) | warn  | A foreign `window.ym`                          |
+| [YM105](#ym105) | warn  | `cleanAddressParams` cannot take effect        |
 | [YM201](#ym201) | error | The tag never initialised                      |
 | [YM202](#ym202) | error | A Content Security Policy blocked Metrica      |
 | [YM301](#ym301) | error | A second pageview tracker                      |
@@ -31,6 +32,7 @@ Three properties hold for all of them:
 | [YM312](#ym312) | warn  | Pageviews held back, or a call dropped         |
 | [YM401](#ym401) | info  | Query parameters removed from the reported URL |
 | [YM402](#ym402) | warn  | The reported URL was truncated                 |
+| [YM403](#ym403) | info  | Query parameters removed from the address bar  |
 
 ---
 
@@ -82,6 +84,20 @@ not intercepted and not printed.
 
 Expected if you deliberately run the vendor snippet alongside. If you did not, you have two
 installations of Metrica on the page — remove one.
+
+## YM105
+
+**cleanAddressParams has no effect: it waits for the first pageview, and pageviews or
+pageviews.first is turned off.**
+
+`cleanAddressParams` removes parameters from the address bar only after the package's own
+pageview for that address has been sent. With `pageviews: false` the package sends none, and with
+`pageviews: { first: false }` it does not send the landing page — the page whose address carries
+the campaign tags — so there is no hit to wait for. Rather than guess, the option is switched off
+for this registration and `getStatus().addressCleaning` is `false`.
+
+Turn the first pageview back on, or drop the option. If you send the landing hit yourself, clean
+the address in that hit's `callback`.
 
 ## YM201
 
@@ -195,3 +211,16 @@ see `consent-and-pii.md`.
 Metrica stores a bounded URL, so the package cuts it rather than letting the collector decide.
 Reports will show the cut form. If long URLs are normal in your app, shorten what you report with
 `transformUrl` instead of letting the truncation land in the middle of a parameter.
+
+## YM403
+
+**Removed from the address bar after the hit: utm_source, utm_medium.**
+
+`cleanAddressParams` did its job: the pageview went out with the full URL, the tag confirmed it,
+and the listed parameters were then removed from the address bar with `history.replaceState`. No
+second pageview is sent and the router is not asked to navigate. The message names what was
+removed.
+
+This is not [YM401](#ym401). YM401 changes what is **reported**; YM403 changes only what the
+visitor sees and copies, after the report has been made. See
+[pageviews.md](./pageviews.md#4-cleaning-the-address-bar).

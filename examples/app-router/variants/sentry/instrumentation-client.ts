@@ -14,6 +14,7 @@ register({
     clickmap: true,
     trackLinks: true,
     accurateTrackBounce: true,
+    cleanAddressParams: 'utm',
 })
 
 // Next reads a single onRouterTransitionStart export per file, and Sentry already needs it.

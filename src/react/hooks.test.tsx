@@ -11,6 +11,8 @@ const status = (state: MetricaStatus['state']): MetricaStatus => ({
     reason: undefined,
     pageviewsSent: 0,
     bufferedCalls: 0,
+    addressCleaning: false,
+    addressCleanups: 0,
 })
 
 const runtimeReporting = (read: () => MetricaStatus): MetricaRuntime => ({

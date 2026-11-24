@@ -29,6 +29,7 @@ export default function RootLayout({
                     clickmap
                     trackLinks
                     accurateTrackBounce
+                    cleanAddressParams='utm'
                 />
                 <Nav />
                 <main>{children}</main>

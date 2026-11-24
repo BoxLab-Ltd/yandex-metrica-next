@@ -5,6 +5,7 @@ export type DiagnosticCode =
     | 'YM102'
     | 'YM103'
     | 'YM104'
+    | 'YM105'
     | 'YM201'
     | 'YM202'
     | 'YM301'
@@ -14,6 +15,7 @@ export type DiagnosticCode =
     | 'YM312'
     | 'YM401'
     | 'YM402'
+    | 'YM403'
 
 export type DiagnosticLevel = 'info' | 'warn' | 'error'
 
@@ -82,6 +84,10 @@ export function report(
             level: 'warn',
             text: 'An existing window.ym was found. Log mode leaves it alone, so calls made through it are not intercepted.',
         },
+        YM105: {
+            level: 'warn',
+            text: 'cleanAddressParams has no effect: it waits for the first pageview, and pageviews or pageviews.first is turned off.',
+        },
         YM201: {
             level: 'error',
             text: 'The tag did not initialise within initTimeout. Likely an ad blocker, a CSP rule, or the network.',
@@ -118,6 +124,10 @@ export function report(
             level: 'warn',
             text: 'The reported URL exceeded 2048 characters and was truncated.',
         },
+        YM403: {
+            level: 'info',
+            text: 'Removed from the address bar after the hit:',
+        },
     }
 
     const { level, text } = MESSAGES[code]
@@ -145,6 +155,7 @@ export const diagnosticCodes: DiagnosticCode[] = [
     'YM102',
     'YM103',
     'YM104',
+    'YM105',
     'YM201',
     'YM202',
     'YM301',
@@ -154,4 +165,5 @@ export const diagnosticCodes: DiagnosticCode[] = [
     'YM312',
     'YM401',
     'YM402',
+    'YM403',
 ]

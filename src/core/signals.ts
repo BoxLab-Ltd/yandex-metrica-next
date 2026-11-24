@@ -6,12 +6,25 @@ export interface HistorySignals {
         listener: (url: string, method: HistoryMethod | 'traverse') => void,
     ): () => void
     onPageShow(listener: (persisted: boolean) => void): () => void
+    /** Replaces the current entry's address without reporting a commit. */
+    rewrite(url: string, state: unknown): void
     dispose(): void
 }
 
 type HistoryPatch = {
     pushState: History['pushState']
     replaceState: History['replaceState']
+}
+
+const hasAppRouterMarker = (state: unknown): boolean =>
+    typeof state === 'object' &&
+    state !== null &&
+    (state as { __NA?: unknown }).__NA === true
+
+const withoutAppRouterMarker = (state: unknown): unknown => {
+    if (!hasAppRouterMarker(state)) return state
+    const { __NA: _, ...rest } = state as Record<string, unknown>
+    return rest
 }
 
 /**
@@ -29,6 +42,7 @@ export function createHistorySignals(): HistorySignals {
         return {
             onCommitSignal: () => () => {},
             onPageShow: () => () => {},
+            rewrite: () => {},
             dispose: () => {},
         }
     }
@@ -38,10 +52,13 @@ export function createHistorySignals(): HistorySignals {
         replaceState: history.replaceState.bind(history),
     }
 
+    let quiet = false
+
     const notify = (
         url: string | URL | null | undefined,
         method: HistoryMethod,
     ): void => {
+        if (quiet) return
         const target =
             url === null || url === undefined
                 ? window.location.href
@@ -81,6 +98,22 @@ export function createHistorySignals(): HistorySignals {
         onPageShow(listener) {
             pageShowListeners.add(listener)
             return () => void pageShowListeners.delete(listener)
+        },
+        rewrite(url, state) {
+            const before: unknown = history.state
+            quiet = true
+            try {
+                // The App Router syncs useSearchParams only for a write without its marker, and puts the marker back itself.
+                history.replaceState(withoutAppRouterMarker(state), '', url)
+                // Nobody put it back, so its patch is not installed; an entry without the marker reloads on traverse.
+                if (
+                    hasAppRouterMarker(before) &&
+                    !hasAppRouterMarker(history.state)
+                )
+                    original.replaceState(state, '', url)
+            } finally {
+                quiet = false
+            }
         },
         dispose() {
             history.pushState = original.pushState

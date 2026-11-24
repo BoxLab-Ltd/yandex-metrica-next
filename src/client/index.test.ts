@@ -16,6 +16,8 @@ const runtime = (): MetricaRuntime => ({
         reason: undefined,
         pageviewsSent: 0,
         bufferedCalls: 0,
+        addressCleaning: false,
+        addressCleanups: 0,
     }),
     arm: (url, type, id) => void armed.push({ url, type, id: id ?? null }),
     grant: () => {},

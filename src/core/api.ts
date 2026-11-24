@@ -27,6 +27,10 @@ export interface MetricaStatus {
     readonly reason: BlockReason | undefined
     readonly pageviewsSent: number
     readonly bufferedCalls: number
+    /** Whether `cleanAddressParams` is in effect. */
+    readonly addressCleaning: boolean
+    /** How many times query parameters were removed from the address bar. */
+    readonly addressCleanups: number
 }
 
 export interface MetricaRuntime {
@@ -53,6 +57,8 @@ export const NOT_INSTALLED: MetricaStatus = {
     reason: undefined,
     pageviewsSent: 0,
     bufferedCalls: 0,
+    addressCleaning: false,
+    addressCleanups: 0,
 }
 
 // Read from the global registry per call: the ESM and CJS builds are separate module instances.

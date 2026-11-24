@@ -168,7 +168,71 @@ URL truncation at 2048.
 
 ---
 
-## 4. What counts as a breaking change
+## 4. Cleaning the address bar
+
+```ts
+register({ counterId: 12345678, cleanAddressParams: 'utm' })
+```
+
+Campaign tags are needed exactly once: in the pageview of the page they brought the visitor to.
+After that they do harm. A visitor copies the address and sends it on, and the next person's visit
+is credited to the same campaign. `cleanAddressParams` removes them from the address bar once that
+pageview has been sent. It is off by default.
+
+It takes `'utm'`, meaning every parameter that starts with `utm_`, or a list of names and prefixes
+ending in `*`, such as `['utm_*', 'yclid']`. Case is ignored.
+
+**When.** Only after the tag confirms the hit through its `callback`, never earlier. The tag's own
+initialisation request reads `location.href` itself, so removing the tags before the hit would lose
+them from at least one request. Then `history.replaceState` writes the address without them. The
+rest of the query keeps its order and encoding, and the `#hash` stays. When nothing matches,
+history is not written at all.
+
+**What does not change.** The pageview goes out with the full URL, tags included. The rewrite is
+not a navigation, so there is no second pageview and no YM30x.
+
+| Situation                                                 | What happens                                                                                                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Landing page                                              | cleaned after its pageview is confirmed                                                                                       |
+| Client navigation to a tagged URL                         | cleaned after that navigation's pageview. A query-only change is not a pageview under `trigger: 'pathname'`, so its tags stay |
+| The visitor moved to another page before the confirmation | left alone; the new page gets its own pageview and its own cleanup                                                            |
+| `consent: 'denied'`                                       | nothing until `grantConsent()`, then after the pageview it sends. Never granted, never cleaned                                |
+| `beforeSend`, `shouldTrack` or `transformUrl` drops it    | no pageview, so no cleanup                                                                                                    |
+| The tag never loads ([YM201](./diagnostics.md#ym201))     | cleaned when the package declares the tag blocked, after `initTimeout`                                                        |
+| `mode: 'log'`                                             | cleaned after the logged pageview, as production would after the sent one                                                     |
+| `mode: 'off'`                                             | nothing                                                                                                                       |
+| `pageviews: false` or `pageviews: { first: false }`       | the option is off and [YM105](./diagnostics.md#ym105) says why                                                                |
+
+A blocked tag is cleaned rather than left alone on purpose. Once the package declares the tag
+blocked, it never flushes its buffer, so no request from this page load will read the address
+again. Keeping the tags would not help the report. They would only travel on in a copied link.
+
+`pageviews.first: false` turns the option off because the package then does not send the landing
+pageview, the one that carries inbound tags, and cannot know when your own hit has gone out. Clean
+the address in that hit's `callback` instead.
+
+**Next.js routers.** Under the App Router the write goes through Next's own `history.replaceState`
+integration, so `useSearchParams()` follows the clean address and `router.refresh()` does not write
+the tags back. Under the Pages Router the copy of the address that Next keeps in `history.state` is
+cleaned too, so back and forward do not restore the tags. `router.query` and `router.asPath` still
+hold them until the next navigation, though. Code that builds a URL from `router.query`, such as
+`router.push({ query: { ...router.query, page: 2 } })`, puts them back.
+
+**Not `stripParams`.** The two options act on different things:
+
+|              | `pageviews.stripParams`         | `cleanAddressParams`                  |
+| ------------ | ------------------------------- | ------------------------------------- |
+| Changes      | the URL **reported** to Metrica | the **address bar**, after the report |
+| Leaves alone | the address bar                 | the reported URL                      |
+| Default      | on, a narrow list of secrets    | off                                   |
+| Announced by | [YM401](./diagnostics.md#ym401) | [YM403](./diagnostics.md#ym403)       |
+
+`getStatus()` reports `addressCleaning`, whether the option is in effect, and `addressCleanups`,
+how many times it has removed something.
+
+---
+
+## 5. What counts as a breaking change
 
 A change in the observable **number or URL** of hits for unchanged user code is breaking in
 substance, even when no signature moved: it breaks reports rather than compilation. The rule is
@@ -176,7 +240,7 @@ minor in 0.x, major from 1.0, and release notes that say what changes in your nu
 
 ---
 
-## 5. Results of the other experiments (2026-08-21)
+## 6. Results of the other experiments (2026-08-21)
 
 ### E5 — mirrors: the tag does not pick a domain by geography. CLOSED
 

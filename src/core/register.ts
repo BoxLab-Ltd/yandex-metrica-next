@@ -1,11 +1,13 @@
 import type { CounterId } from '../index.js'
 import type { BeforeSend, MetricaEvent } from './types/events.js'
-import type { InitParameters } from './types/tag.js'
+import type { HitOptions, InitParameters } from './types/tag.js'
 import type { Diagnostic } from './diagnostics.js'
 import type { MetricaMode } from './mode.js'
 import type { PageviewOptions } from './pageview.js'
 import type { MetricaDomain } from './loader.js'
 import type { MetricaRuntime, MetricaStatus } from './api.js'
+import type { CleanAddressParams } from './address.js'
+import { cleanHistoryState, paramMatcher, removeParams } from './address.js'
 import { report } from './diagnostics.js'
 import { createLogSink, resolveMode } from './mode.js'
 import { countCopies, getRegistry } from './registry.js'
@@ -29,6 +31,11 @@ export interface MetricaConfig {
     accurateTrackBounce?: boolean | number
     ecommerce?: boolean | string
     pageviews?: false | PageviewOptions
+    /**
+     * Query parameters to remove from the address bar once the pageview carrying them is sent,
+     * so a copied link does not repeat them. `'utm'` covers every `utm_*`. Off by default.
+     */
+    cleanAddressParams?: CleanAddressParams
     title?: TitleMode
     titleTimeout?: number
     beforeSend?: BeforeSend
@@ -68,9 +75,13 @@ const noopHandle: MetricaHandle = {
         reason: undefined,
         pageviewsSent: 0,
         bufferedCalls: 0,
+        addressCleaning: false,
+        addressCleanups: 0,
     }),
     dispose: () => {},
 }
+
+const withoutHash = (href: string): string => href.split('#', 1)[0] ?? href
 
 export function register(config: MetricaConfig = {}): MetricaHandle {
     const warn = (
@@ -127,6 +138,18 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
     let pageviewsSent = 0
     let counterStatus: MetricaStatus['state'] = 'idle'
     let counterReason: MetricaStatus['reason']
+    let disposed = false
+
+    const pageviewOptions =
+        config.pageviews === false ? null : (config.pageviews ?? {})
+
+    const requestedCleaning = paramMatcher(config.cleanAddressParams)
+    const sendsFirstPageview =
+        pageviewOptions !== null && pageviewOptions.first !== false
+    if (requestedCleaning !== null && !sendsFirstPageview) warn('YM105')
+    const cleaning = sendsFirstPageview ? requestedCleaning : null
+    let addressCleanups = 0
+    let lastHitAddress: string | null = null
 
     const currentStatus = (): MetricaStatus => ({
         state: counterStatus,
@@ -134,6 +157,8 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
         reason: counterReason,
         pageviewsSent,
         bufferedCalls: pipeline.buffered,
+        addressCleaning: cleaning !== null,
+        addressCleanups,
     })
 
     const sendToTag = (call: BufferedCall): void => {
@@ -141,12 +166,22 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
         ym?.(call.counterId, call.method, ...call.args)
     }
 
+    const confirmingHits =
+        (log: (call: BufferedCall) => void) =>
+        (call: BufferedCall): void => {
+            log(call)
+            const callback =
+                call.method === 'hit'
+                    ? (call.args[1] as HitOptions | undefined)?.callback
+                    : undefined
+            // The tag confirms a hit asynchronously; log mode keeps that order so dev matches production.
+            if (callback !== undefined) queueMicrotask(callback)
+        }
+
     const sink =
-        resolved.mode === 'log' && resolved.foreignYm
-            ? () => {}
-            : resolved.mode === 'log'
-              ? createLogSink()
-              : sendToTag
+        resolved.mode === 'log'
+            ? confirmingHits(resolved.foreignYm ? () => {} : createLogSink())
+            : sendToTag
 
     let consentGranted = (config.consent ?? 'granted') !== 'denied'
 
@@ -198,8 +233,12 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
                           counterStatus = status
                           counterReason = reason
                           if (status === 'ready') pipeline.setReady(true)
-                          if (status === 'blocked' && reason === 'timeout')
+                          if (status === 'blocked' && reason === 'timeout') {
                               warn('YM201')
+                              // The buffer is never flushed after this, so nothing in this page load reads the address.
+                              if (lastHitAddress !== null)
+                                  cleanAddress(lastHitAddress)
+                          }
                       },
                       onReady: id => config.onReady?.({ counterId: id }),
                   },
@@ -226,15 +265,16 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
     })
     const owner = Symbol('yandex-metrica-next.tracker')
 
-    const pageviewOptions =
-        config.pageviews === false ? null : (config.pageviews ?? {})
-
     const tracker =
         pageviewOptions === null
             ? null
             : createPageviewTracker(pageviewOptions, {
                   signals,
                   send: (url, context) => {
+                      const address =
+                          cleaning === null || typeof window === 'undefined'
+                              ? null
+                              : window.location.href
                       void titles.settle().then(title => {
                           const event: MetricaEvent = {
                               type: 'pageview',
@@ -245,7 +285,18 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
                                   ? documentReferrer()
                                   : undefined,
                           }
-                          if (pipeline.send(event)) pageviewsSent += 1
+                          const sent = pipeline.send(
+                              event,
+                              address === null
+                                  ? undefined
+                                  : () => cleanAddress(address),
+                          )
+                          if (sent) pageviewsSent += 1
+                          if (sent && address !== null) {
+                              lastHitAddress = address
+                              if (counterStatus === 'blocked')
+                                  cleanAddress(address)
+                          }
                           if (
                               tracker !== null &&
                               tracker.commitsWithoutArm >= 2
@@ -259,6 +310,19 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
                   onTruncated: () => warn('YM402'),
                   onArmWithoutCommit: () => warn('YM303'),
               })
+
+    function cleanAddress(address: string): void {
+        if (disposed || cleaning === null) return
+        const current = window.location.href
+        // The visitor has moved on; that page gets its own hit and its own cleanup.
+        if (withoutHash(current) !== withoutHash(address)) return
+        const { url, removed } = removeParams(current, cleaning)
+        if (removed.length === 0) return
+        signals.rewrite(url, cleanHistoryState(history.state, cleaning))
+        tracker?.acknowledge(url)
+        addressCleanups += 1
+        warn('YM403', `${removed.join(', ')}.`)
+    }
 
     if (tracker !== null) {
         registry.trackerOwner = owner
@@ -347,8 +411,6 @@ export function register(config: MetricaConfig = {}): MetricaHandle {
     }
 
     setRuntime(runtime)
-
-    let disposed = false
 
     return {
         counterId,

@@ -10,6 +10,14 @@ dist/client/index.d.ts
 dist/client/index.d.ts.map
 dist/client/index.js
 dist/client/index.js.map
+dist/core/address.cjs
+dist/core/address.cjs.map
+dist/core/address.d.cts
+dist/core/address.d.cts.map
+dist/core/address.d.ts
+dist/core/address.d.ts.map
+dist/core/address.js
+dist/core/address.js.map
 dist/core/api.cjs
 dist/core/api.cjs.map
 dist/core/api.d.cts

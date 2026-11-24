@@ -8,6 +8,7 @@ const links = [
     ['/fast', 'Fast'],
     ['/a', 'Page A'],
     ['/b', 'Page B'],
+    ['/b?utm_source=e2e&utm_medium=menu', 'Tagged link'],
     ['/redirect', 'Redirect'],
     ['/goals', 'Goals'],
 ] as const

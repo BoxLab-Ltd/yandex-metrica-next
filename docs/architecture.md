@@ -121,6 +121,13 @@ from `routeChangeComplete` instead. It deliberately does not send: Next writes h
 emits that event, so the pageview is already on its way through the ordinary commit path, and a
 second sending path would be a second place for `beforeSend` to disagree with the first.
 
+`cleanAddressParams` hangs off the same path. The pageview is handed to the tag with a `callback`,
+attached after `beforeSend` so a rewritten event cannot lose it. When the tag calls it, and the
+address bar still shows the page that was reported, the matching parameters are removed. The write
+goes through `signals.rewrite`, which mutes the package's own history listeners for its duration.
+The tracker is then told the new address, so the router writing the same URL back is not a commit
+either.
+
 Only one tracker can run per document. A second `register()` while one is active starts nothing
 and reports [YM301](./diagnostics.md#ym301).
 

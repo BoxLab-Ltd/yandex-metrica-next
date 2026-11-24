@@ -67,7 +67,8 @@ const refresh = (): void => {
     if (
         next.state === cachedStatus.state &&
         next.reason === cachedStatus.reason &&
-        next.pageviewsSent === cachedStatus.pageviewsSent
+        next.pageviewsSent === cachedStatus.pageviewsSent &&
+        next.addressCleanups === cachedStatus.addressCleanups
     ) {
         return
     }

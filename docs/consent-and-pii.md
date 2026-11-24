@@ -38,6 +38,18 @@ would send, after the fact, events the visitor had not agreed to. The page they 
 lost either — granting consent counts the current page at that moment, so a landing page still
 appears in your reports.
 
+### Cleaning the address bar with consent pending
+
+`cleanAddressParams` removes campaign tags from the address bar only after the pageview that
+carried them has been sent. While consent is pending nothing is sent, so nothing is cleaned. The
+tags are still needed for the pageview that `grantConsent()` sends for the current page. Once that
+pageview is confirmed, they go. If the visitor never agrees, the address is never touched. Details
+are in [pageviews.md](./pageviews.md#4-cleaning-the-address-bar).
+
+This is not a privacy control. It decides what a copied link carries, not what Metrica receives:
+the pageview reports the full address with the tags. To keep a parameter away from Metrica, use
+`stripParams` and the recipes in the section below.
+
 ## beforeSend
 
 `beforeSend` sees **every** event the package sends — pageviews, goals, parameters, user
@@ -96,7 +108,8 @@ There are exactly three ways to deal with it, and all of them are yours, not the
 
 1. **Do not put secrets in URLs.** Tokens belong in a POST body or a fragment you strip before
    the router settles.
-2. **Clean the address before the tag loads.** Replace the URL first, then register:
+2. **Clean the address before the tag loads.** Replace the URL first, then register. This is the
+   opposite of `cleanAddressParams`, which waits for the pageview and so is no use for a secret:
 
     ```ts
     const url = new URL(window.location.href)

@@ -39,6 +39,8 @@ beforeEach(() => {
             reason: undefined,
             pageviewsSent: 0,
             bufferedCalls: 0,
+            addressCleaning: false,
+            addressCleanups: 0,
         }),
         grant: vi.fn(),
         revoke: vi.fn(),
