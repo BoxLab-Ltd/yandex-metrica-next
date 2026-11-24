@@ -146,6 +146,10 @@ intercepted, the real tag degrades after the first hit and stops sending, so net
 would silently stop reflecting what the package did. The interception stays, as a guard that no
 request ever leaves for a real collector.
 
+A `/watch/` request made with `fetch` is answered with JSON, the way the collector answers it. The
+tag calls a hit's `callback` only after it has parsed that answer. Given a pixel instead, it retries
+and never calls back, so `cleanAddressParams` could not be tested at all.
+
 Cells cover Next 15 and 16, React 18 and 19, webpack and Turbopack, both routers, both
 installation paths, Sentry owning `onRouterTransitionStart`, a CommonJS `next.config.js`, and a
 `basePath`. `node scripts/e2e.mjs matrix` prints the list CI runs.

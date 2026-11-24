@@ -248,6 +248,17 @@ export const test = base.extend<{ metrica: MetricaSpy }>({
                             headers,
                         })
                     }
+                    // The collector answers fetch with JSON; anything else and the tag retries and never calls a hit's callback.
+                    if (
+                        url.pathname.startsWith('/watch/') &&
+                        ['fetch', 'xhr'].includes(request.resourceType())
+                    ) {
+                        return route.fulfill({
+                            body: '{"settings":{}}',
+                            contentType: 'application/json',
+                            headers,
+                        })
+                    }
                     if (
                         url.pathname.startsWith('/watch/') ||
                         url.pathname.endsWith('.gif')
