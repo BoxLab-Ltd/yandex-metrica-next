@@ -37,6 +37,7 @@ describe('metricaCsp — webvisor', () => {
         const csp = metricaCsp({ webvisor: true })
         expect(csp['connect-src']).toContain('https://mc.webvisor.com')
         expect(csp['connect-src']).toContain('wss://mc.webvisor.org')
+        expect(csp['img-src']).toContain('https://mc.webvisor.org')
         expect(csp['frame-src']).toEqual(['blob:', 'https://mc.yandex.ru'])
         expect(csp['child-src']).toEqual(['blob:', 'https://mc.yandex.ru'])
     })
@@ -104,7 +105,7 @@ describe('metricaCspString', () => {
         expect(
             metricaCspString({ webvisor: true, strictDynamic: true }),
         ).toMatchInlineSnapshot(
-            `"connect-src https://mc.yandex.ru https://mc.yandex.md https://mc.webvisor.com https://mc.webvisor.org wss://mc.yandex.ru wss://mc.yandex.md wss://mc.webvisor.com wss://mc.webvisor.org; img-src https://mc.yandex.ru https://yastatic.net; frame-src blob: https://mc.yandex.ru; child-src blob: https://mc.yandex.ru"`,
+            `"connect-src https://mc.yandex.ru https://mc.yandex.md https://mc.webvisor.com https://mc.webvisor.org wss://mc.yandex.ru wss://mc.yandex.md wss://mc.webvisor.com wss://mc.webvisor.org; img-src https://mc.yandex.ru https://yastatic.net https://mc.webvisor.com https://mc.webvisor.org; frame-src blob: https://mc.yandex.ru; child-src blob: https://mc.yandex.ru"`,
         )
     })
 })

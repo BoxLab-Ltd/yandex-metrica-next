@@ -24,7 +24,10 @@ metricaCsp({ webvisor: true })
 //     'wss://mc.yandex.ru', 'wss://mc.yandex.md',
 //     'wss://mc.webvisor.com', 'wss://mc.webvisor.org',
 //   ],
-//   'img-src': ['https://mc.yandex.ru', 'https://yastatic.net'],
+//   'img-src': [
+//     'https://mc.yandex.ru', 'https://yastatic.net',
+//     'https://mc.webvisor.com', 'https://mc.webvisor.org',
+//   ],
 //   'frame-src': ['blob:', 'https://mc.yandex.ru'],
 //   'child-src': ['blob:', 'https://mc.yandex.ru'],
 // }
@@ -46,7 +49,8 @@ Two facts behind the defaults, both taken from the tag itself rather than from d
   mechanism.
 
 Hits travel by `fetch` and XHR, not as images, which is why the collection hosts live in
-`connect-src`. `img-src` is there for the `<noscript>` pixel and the ad-block detection gif.
+`connect-src`. `img-src` is there for the `<noscript>` pixel and the ad-block detection gif, and,
+with `webvisor: true`, for the image Session Replay loads from `mc.webvisor.org` to sync its cookie.
 
 ## Merging, not appending
 

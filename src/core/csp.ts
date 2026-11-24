@@ -93,8 +93,12 @@ export function metricaCsp(options: CspOptions = {}): Record<string, string[]> {
             ...connectHosts.map(host => `https://${host}`),
             ...connectHosts.map(host => `wss://${host}`),
         ],
-        // img-src covers the <noscript> pixel and the adblock-detection gif.
-        'img-src': ['https://mc.yandex.ru', 'https://yastatic.net'],
+        // img-src covers the <noscript> pixel, the adblock-detection gif and Session Replay's cookie sync.
+        'img-src': [
+            'https://mc.yandex.ru',
+            'https://yastatic.net',
+            ...(webvisor ? WEBVISOR_HOSTS.map(host => `https://${host}`) : []),
+        ],
     }
 
     if (webvisor) {
